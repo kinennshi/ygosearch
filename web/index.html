@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YGOSearch · 游戏王卡片检索</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --border: #dfe3e8;
+  --text: #1c2430; --muted: #6b7686; --accent: #3563e9;
+  --accent-weak: #e8eeff; --danger: #c23934; --ok: #1a7f37;
+  --chip-bg: #eef1f5; --chip-on: #3563e9; --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text);
+  font: 14px/1.6 "Segoe UI", "Microsoft YaHei", sans-serif; overflow: hidden; }
+header { background: var(--panel); border-bottom: 1px solid var(--border);
+  padding: 10px 20px; display: flex; align-items: center; gap: 16px;
+  height: 54px; }
+header h1 { font-size: 17px; font-weight: 600; }
+header .sub { color: var(--muted); font-size: 12px; }
+.mode-switch { position: relative; display: inline-flex; margin-left: auto;
+  background: var(--chip-bg); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px; }
+.mode-switch .mode-thumb { position: absolute; top: 3px; left: 3px;
+  width: 28px; height: 28px; background: var(--accent);
+  border-radius: 50%; transition: transform .2s ease; }
+.mode-switch.ai .mode-thumb { transform: translateX(28px); }
+.mode-switch .mode-btn { position: relative; z-index: 1; border: 0;
+  background: transparent; width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); transition: color .2s; }
+.mode-switch .mode-btn.on { color: #fff; }
+
+main { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px;
+  max-width: 1500px; margin: 0 auto; padding: 12px 16px;
+  height: calc(100% - 54px); }
+.left { overflow-y: auto; padding-right: 4px; }
+.right { overflow-y: auto; min-width: 0; display: flex; flex-direction: column; }
+@media (max-width: 940px) {
+  body { overflow: auto; }
+  header { position: sticky; top: 0; z-index: 20; }
+  main { grid-template-columns: 1fr; height: auto; padding-bottom: 76px; }
+  .left, .right { overflow: visible; }
+  .empty-state { display: none !important; }
+  .action-bar { position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 10px 16px; margin: 0; background: var(--bg);
+    border-top: 1px solid var(--border); z-index: 20; }
+}
+main.ai-mode { display: block; overflow-y: auto; max-width: none; }
+main.ai-mode .left, main.ai-mode .right {
+  width: min(920px, 100%); margin-left: auto; margin-right: auto;
+  overflow: visible; padding-right: 0;
+}
+main.ai-mode .right { margin-top: 22px; padding-bottom: 28px; }
+#pane-ai { padding-top: clamp(42px, 9vh, 100px); }
+#pane-ai .panel { border: 0; background: transparent; box-shadow: none;
+  padding: 0; }
+.ai-heading { text-align: center; font-size: clamp(23px, 3vw, 34px);
+  font-weight: 650; margin-bottom: 22px; }
+main.ai-mode .summary { background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+
+.panel { background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.group { margin-bottom: 12px; }
+.group:last-child { margin-bottom: 0; }
+.group > label, .kind-row > label { display: inline-block; font-size: 12px;
+  color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+.kind-row { margin-bottom: 8px; }
+.kind-row:last-child { margin-bottom: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--border); background: var(--chip-bg);
+  border-radius: 999px; padding: 3px 12px; cursor: pointer; font-size: 12px;
+  user-select: none; white-space: nowrap; }
+.chip.on { background: var(--chip-on); border-color: var(--chip-on);
+  color: #fff; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.num-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px; }
+.num-field { border: 1px solid var(--border); border-radius: 7px;
+  background: #fafbfc; padding: 9px 10px; min-width: 0; }
+.num-field > label { display: block; color: var(--muted); font-size: 12px;
+  font-weight: 600; margin-bottom: 5px; }
+.num-field .num-row { margin: 0; }
+.num-field input[type=number] { width: 100%; min-width: 0; }
+.num-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.num-row:last-child { margin-bottom: 0; }
+.num-row .num-label { font-size: 12px; color: var(--muted); width: 64px;
+  font-weight: 600; flex-shrink: 0; }
+input[type=text], input[type=number], input[type=password], select {
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+  font-size: 13px; background: #fff; color: var(--text); }
+input[type=number] { width: 100px; }
+#name-kw, #setname, #desc-kw { width: 100%; }
+select.dim-select { min-width: 260px; }
+.dash { color: var(--muted); }
+.btn { background: var(--accent); color: #fff; border: 0; border-radius: 6px;
+  padding: 8px 22px; font-size: 14px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.ghost { background: var(--panel); color: var(--accent);
+  border: 1px solid var(--accent); }
+.action-bar { position: sticky; bottom: 0; z-index: 5;
+  background: var(--bg); padding: 10px 0; display: flex; gap: 8px; }
+.action-bar .btn { flex: 1; }
+.nl-row { display: flex; gap: 8px; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 999px; padding: 6px;
+  box-shadow: 0 8px 28px rgba(28,36,48,.08); }
+.nl-row:focus-within { border-color: var(--accent); }
+.nl-row input[type=text] { flex: 1; min-width: 0; font-size: 17px;
+  padding: 10px 18px; border: 0; outline: 0; border-radius: 999px; }
+.nl-row .btn { border-radius: 999px; min-width: 94px; }
+.ai-hint { margin-top: 10px; font-size: 12px; color: var(--muted);
+  text-align: center; }
+.api-config { width: min(760px, 100%); margin: 14px auto 0;
+  color: var(--muted); font-size: 12px; }
+.api-config summary { cursor: pointer; color: var(--muted);
+  font-size: 12px; text-align: center; list-style: none; }
+.api-config summary::before { content: "⚙ "; }
+.api-config[open] { background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; }
+.api-config[open] summary { text-align: left; }
+.api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-top: 10px; }
+.api-grid label { display: block; color: var(--muted); font-size: 12px;
+  margin-bottom: 4px; }
+.api-grid input, .api-grid select { width: 100%; }
+.api-grid .wide { grid-column: 1 / -1; }
+.model-row { display: flex; gap: 7px; }
+.model-row input { flex: 1; min-width: 0; }
+.model-row .btn { flex: none; padding: 6px 11px; font-size: 12px; }
+@media (max-width: 540px) {
+  .num-panel, .api-grid { grid-template-columns: 1fr; }
+  header .sub { display: none; }
+  .nl-row input[type=text] { font-size: 14px; padding: 8px 10px; }
+  .nl-row .btn { min-width: 70px; padding: 7px 12px; }
+}
+.field-cond { border: 1px dashed var(--border); border-radius: var(--radius);
+  padding: 12px; margin-top: 6px; background: #fafbfc; }
+.dim-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.dim-row:last-child { margin-bottom: 0; }
+.dim-row .dim-label { font-size: 12px; color: var(--muted); width: 64px;
+  font-weight: 600; flex-shrink: 0; }
+.dim-row select { flex: 1; min-width: 0; }
+.hint { color: var(--muted); font-size: 12px; }
+.toggle { display: flex; align-items: center; gap: 6px; font-size: 13px;
+  cursor: pointer; user-select: none; }
+.summary { font-size: 13px; color: var(--muted); margin: 2px 2px 10px; }
+.summary b { color: var(--text); }
+.pager { display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 7px; margin: 0 0 8px; padding: 8px 0;
+  position: sticky; top: 0; z-index: 5; background: var(--bg); }
+.pager[hidden] { display: none; }
+.pager .btn { padding: 5px 10px; font-size: 12px; }
+.pager-status { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.pager-jump { width: 62px; padding: 5px 6px; text-align: center; }
+.cards { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+.card { background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px; cursor: pointer; }
+.card:hover { border-color: var(--accent); }
+.card .line1 { display: flex; align-items: baseline; gap: 10px;
+  flex-wrap: wrap; }
+.card .name { font-size: 15px; font-weight: 600; }
+.badge { font-size: 11px; border-radius: 4px; padding: 1px 7px;
+  background: var(--chip-bg); color: var(--muted); }
+.badge.warn { background: #fdecea; color: var(--danger); }
+.badge.sp { background: var(--accent-weak); color: var(--accent); }
+.card .line2 { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.card-desc { margin-top: 6px; font-size: 12px; color: var(--muted);
+  line-height: 1.55; max-height: 7.75em; overflow: hidden; }
+.reasons { margin-top: 6px; border-top: 1px dashed var(--border);
+  padding-top: 6px; font-size: 12px; color: var(--muted); }
+.reasons .why { color: var(--ok); }
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+.empty-state { border: 1.5px dashed var(--border); border-radius: 12px;
+  padding: 44px 28px; text-align: center; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; margin: 0; flex: 1; }
+.empty-state .empty-icon { width: 52px; height: 52px; border-radius: 14px;
+  background: var(--accent-weak); color: var(--accent); display: flex;
+  align-items: center; justify-content: center; }
+.empty-state .empty-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.empty-state .empty-sub { font-size: 13px; color: var(--muted); }
+.empty-state .example-chips { display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; margin-top: 2px; }
+.empty-state .example-chips .chip { cursor: pointer; background: #fff; }
+.empty-state .example-chips .chip:hover { border-color: var(--accent);
+  color: var(--accent); }
+.empty-state .empty-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.error { background: #fdecea; border: 1px solid #f2b8b5; color: var(--danger);
+  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; }
+dialog { border: 1px solid var(--border); border-radius: 10px; padding: 0;
+  width: min(720px, 92vw); max-height: 90vh; position: fixed;
+  inset: 0; margin: auto; }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+.dlg-head { padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; }
+.dlg-head h2 { font-size: 16px; flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dlg-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.dlg-actions .btn { padding: 5px 10px; white-space: nowrap; font-size: 12px; }
+.dlg-position { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.dlg-body { padding: 14px 18px; max-height: 65vh; overflow-y: auto; }
+.seg { border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 12px; margin-bottom: 8px; }
+.seg .seg-no { font-weight: 600; color: var(--accent); margin-right: 8px; }
+.seg .seg-text { font-size: 13px; margin: 4px 0; }
+.seg .dims { display: flex; flex-wrap: wrap; gap: 5px; }
+.seg .dims .badge { background: var(--accent-weak); color: var(--accent); }
+.kv { display: grid; grid-template-columns: 90px 1fr; gap: 3px 10px;
+  font-size: 13px; margin-bottom: 10px; }
+.kv .k { color: var(--muted); }
+.loading { text-align: center; color: var(--muted); padding: 30px; }
+.spin { display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--muted); border-top-color: transparent;
+  border-radius: 50%; animation: sp .8s linear infinite;
+  vertical-align: -2px; margin-right: 6px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+/* 排序栏 */
+.sort-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+  padding: 6px 0; }
+.sort-bar[hidden] { display: none; }
+.sort-bar .sort-label { font-size: 12px; color: var(--muted); }
+.sort-bar select { padding: 4px 8px; font-size: 12px; }
+/* 折叠面板 */
+.panel-head { display: flex; align-items: center; justify-content: space-between;
+  width: 100%; border: 0; background: transparent; cursor: pointer;
+  padding: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--text); }
+.panel-head .panel-arrow { color: var(--muted); transition: transform .2s; }
+.panel.collapsed .panel-arrow { transform: rotate(-90deg); }
+.panel.collapsed .panel-body { display: none; }
+.panel.collapsed .panel-head { padding-bottom: 0; }
+/* 换一批按钮 */
+.reshuffle { padding: 3px 10px; font-size: 12px; margin-left: 6px;
+  border-radius: 999px; }
+/* toast */
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: #1c2430; color: #fff; padding: 8px 16px; border-radius: 8px;
+  font-size: 13px; z-index: 100; display: none; align-items: center; gap: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25); max-width: 90vw; }
+#toast.show { display: flex; }
+#toast .toast-undo { color: #8ab4ff; cursor: pointer; border: 0;
+  background: transparent; font-size: 13px; padding: 0; }
+/* 卡片描述展开 */
+.card-desc { margin-top: 6px; font-size: 12px; color: var(--muted);
+  line-height: 1.55; }
+.card-desc.clamped { max-height: 7.75em; overflow: hidden; }
+.expand-btn { display: block; margin-top: 4px; border: 0; background: transparent;
+  color: var(--accent); cursor: pointer; font-size: 12px; padding: 0; }
+/* 复制按钮 */
+.copy-btn { border: 0; background: transparent; color: var(--muted);
+  cursor: pointer; font-size: 12px; padding: 0 3px; opacity: 0;
+  transition: opacity .15s; display: inline-flex; align-items: center; }
+.card:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { color: var(--accent); }
+/* 描述收起 */
+.summary { cursor: pointer; }
+
+</style>
+</head>
+<body>
+<header>
+  <h1>YGOSearch</h1>
+  <span class="sub">游戏王卡片自然语义检索器</span>
+  <div class="mode-switch" id="mode-switch">
+    <span class="mode-thumb"></span>
+    <button class="mode-btn on" data-mode="manual" onclick="switchTab('manual')" title="手动检索" aria-label="手动检索">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+    <button class="mode-btn" data-mode="ai" onclick="switchTab('ai')" title="AI 语义搜索" aria-label="AI 语义搜索">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg>
+    </button>
+  </div>
+</header>
+<main id="main-layout">
+  <!-- ============ 左栏：筛选选项 ============ -->
+  <aside class="left">
+    <div id="error" class="error" style="display:none"></div>
+
+    <!-- AI 搜索 -->
+    <section id="pane-ai" style="display:none">
+      <div class="panel">
+        <h2 class="ai-heading">YGOSearch</h2>
+        <div class="group">
+          <div class="nl-row">
+            <input type="text" id="nl-query" placeholder="例：有哪些三色康的仪式怪兽？"
+                   aria-label="自然语言搜索"
+                   onkeydown="if(event.key==='Enter')doNlSearch()">
+            <button class="btn" id="nl-btn" onclick="doNlSearch()">搜索</button>
+          </div>
+          <div class="ai-hint" id="ai-hint" style="display:none">
+            未配置 AI 服务，语义检索暂不可用；手动检索不受影响。</div>
+        </div>
+        <details class="api-config" id="api-config">
+          <summary>API 配置</summary>
+          <div class="api-grid">
+            <div><label for="ai-provider">AI 服务</label>
+              <select id="ai-provider" onchange="updateProviderFields()"></select></div>
+            <div><label for="ai-key">API Key</label>
+              <input type="password" id="ai-key" autocomplete="off" placeholder="填写 API Key"></div>
+            <div class="wide" id="ai-local-fields" style="display:none">
+              <div class="api-grid">
+                <div><label for="ai-model">本地模型名称</label>
+                  <div class="model-row">
+                    <input type="text" id="ai-model" list="local-model-list" placeholder="例如 qwen3">
+                    <button class="btn ghost" id="scan-models" onclick="scanLocalModels()">扫描模型</button>
+                  </div>
+                  <datalist id="local-model-list"></datalist>
+                </div>
+                <div><label for="ai-base-url">本地服务地址</label>
+                  <input type="text" id="ai-base-url" placeholder="http://127.0.0.1:8000/v1"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" onclick="saveAiConfig()">保存配置</button>
+            <span class="hint" id="ai-config-status"></span>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 手动筛选 -->
+    <section id="pane-manual">
+      <div class="panel" data-title="搜索">
+        <div class="group"><label>卡名含</label>
+          <input type="text" id="name-kw"></div>
+        <div class="group"><label>系列</label>
+          <input type="text" id="setname" list="setname-list"
+                 placeholder="输入系列名，可自动补全">
+          <datalist id="setname-list"></datalist></div>
+        <div class="group"><label>卡池</label>
+          <div class="chips" id="g-ot"></div></div>
+        <div class="group"><label>禁限情况</label>
+          <div class="chips" id="g-ban"></div></div>
+        <div class="group"><label>文本含</label>
+          <input type="text" id="desc-kw"></div>
+      </div>
+
+      <div class="panel" data-title="卡面">
+        <div class="group"><label>卡面</label>
+          <div class="chips" id="g-type"></div></div>
+        <div id="kind-rows"></div>
+        <div class="group"><label>属性</label>
+          <div class="chips" id="g-attr"></div></div>
+        <div class="group"><label>种族</label>
+          <div class="chips" id="g-race"></div></div>
+      </div>
+
+      <div class="panel" data-title="数值" data-collapsed>
+        <div class="group"><label>数值区间</label>
+          <div class="num-panel">
+          <div class="num-field"><label>等级/阶级</label><div class="num-row">
+            <input type="number" id="lv-lo" placeholder="min">
+            <span class="dash">–</span>
+            <input type="number" id="lv-hi" placeholder="max"></div></div>
+          <div class="num-field"><label>LINK 值</label><div class="num-row">
+            <input type="number" id="link-lo" placeholder="min">
+            <span class="dash">–</span>
+            <input type="number" id="link-hi" placeholder="max"></div></div>
+          <div class="num-field"><label>灵摆刻度</label><div class="num-row">
+            <input type="number" id="scale-lo" placeholder="min">
+            <span class="dash">–</span>
+            <input type="number" id="scale-hi" placeholder="max"></div></div>
+          <div class="num-field"><label>攻击力</label><div class="num-row">
+            <input type="number" id="atk-lo" placeholder="min">
+            <span class="dash">–</span>
+            <input type="number" id="atk-hi" placeholder="max"></div></div>
+          <div class="num-field"><label>守备力</label><div class="num-row">
+            <input type="number" id="def-lo" placeholder="min">
+            <span class="dash">–</span>
+            <input type="number" id="def-hi" placeholder="max"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" data-title="效果" data-collapsed>
+        <div class="group">
+          <div class="field-cond">
+            <div class="dim-row"><span class="dim-label">发动类型</span>
+              <select id="f-activation" class="dim-select"></select></div>
+            <div class="dim-row"><span class="dim-label">发动时点</span>
+              <select id="f-timing" class="dim-select"></select></div>
+            <div class="dim-row"><span class="dim-label">发动地点</span>
+              <select id="f-location" class="dim-select"></select></div>
+            <div class="dim-row"><span class="dim-label">对象状态</span>
+              <select id="f-targets" class="dim-select">
+                <option value="">不限</option>
+                <option value="0">不取对象</option>
+                <option value="1">取对象</option></select></div>
+            <div class="group" style="margin-top:10px"><label>效果类型</label>
+              <div class="chips" id="g-category"></div></div>
+            <div class="dim-row"><span class="dim-label">无效类型</span>
+              <select id="f-negate" class="dim-select"></select></div>
+            <label class="toggle" style="margin-top:8px">
+              <input type="checkbox" id="f-exclude-negate">
+              排除「无效并破坏」段（查"破坏"时建议勾选）</label>
+          </div></div>
+      </div>
+      <div class="action-bar">
+        <button class="btn" onclick="doManualSearch()">检索</button>
+        <button class="btn ghost" onclick="resetManual()">清空条件</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ============ 右栏：结果 ============ -->
+  <section class="right">
+    <div id="result-summary" class="summary" style="display:none"></div>
+    <div id="sort-bar" class="sort-bar" hidden>
+      <span class="sort-label">排序</span>
+      <select id="sort-select" onchange="onSortChange()">
+        <option value="">默认</option>
+        <option value="atk_desc">攻击力 ↓</option>
+        <option value="atk_asc">攻击力 ↑</option>
+        <option value="def_desc">守备力 ↓</option>
+        <option value="def_asc">守备力 ↑</option>
+        <option value="level_desc">等级 ↓</option>
+        <option value="level_asc">等级 ↑</option>
+        <option value="id_desc">发布时间 ↓</option>
+        <option value="id_asc">发布时间 ↑</option>
+      </select>
+    </div>
+    <nav class="pager" id="pager-top" hidden aria-label="结果翻页"></nav>
+    <div id="cards" class="cards">
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="empty-title">设置条件，点击「检索」开始</div>
+        <div class="empty-sub">不确定怎么筛？试试这些示例：<button class="btn ghost reshuffle" id="reshuffle-btn" onclick="renderExamples()">换一批</button></div>
+        <div class="example-chips" id="example-chips"></div>
+        <div class="empty-meta" id="empty-meta">卡池 — 张 · 卡池版本 —</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg"><div class="dlg-head"><h2 id="dlg-title"></h2>
+  <div class="dlg-actions">
+    <span id="dlg-position" class="dlg-position"></span>
+    <button id="dlg-prev" class="btn ghost" onclick="moveCard(-1)">上一张</button>
+    <button id="dlg-next" class="btn ghost" onclick="moveCard(1)">下一张</button>
+    <button class="btn ghost" onclick="dlg.close()">关闭</button>
+  </div></div>
+  <div class="dlg-body" id="dlg-body"></div></dialog>
+<div id="toast"><span class="toast-msg"></span><button class="toast-undo" style="display:none">撤销</button></div>
+
+<script>
+let VOCAB = null;
+let AI_CONFIG = null;
+let RESULT_CARDS = [];
+let detailRequestSerial = 0;
+const PAGE_SIZE = 100;
+let ACTIVE_DSL = null;
+let ACTIVE_SORT = null;
+let CURRENT_PAGE = 0;
+let TOTAL_RESULTS = 0;
+let searchRequestSerial = 0;
+let toastTimer = null;
+let lastSnapshot = null;
+let SUMMARY_FULL = "";
+let SUMMARY_SHORT = "";
+let summaryExpanded = false;
+/* 种类 / 能力分组：scope 控制卡面联动。 */
+const KIND_GROUPS = [
+  {title: "怪兽种类", scope: "怪兽", labels: ["通常", "效果", "仪式", "融合", "同调", "超量", "灵摆", "连接"]},
+  {title: "魔法种类", scope: "魔法", labels: ["通常", "仪式", "速攻", "永续", "装备", "场地"]},
+  {title: "陷阱种类", scope: "陷阱", labels: ["通常", "永续", "反击"]},
+  {title: "怪兽能力", scope: "怪兽", labels: ["调整", "反转", "灵魂", "联合", "二重", "卡通", "特殊召唤"]},
+];
+
+async function api(path, body) {
+  const opt = body ? {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  return r.json();
+}
+function showError(msg) {
+  const el = document.getElementById("error");
+  if (!msg) { el.style.display = "none"; return; }
+  el.textContent = msg; el.style.display = "block";
+  el.scrollIntoView({behavior: "smooth", block: "nearest"});
+}
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[ch]);
+}
+function chip(label, on) {
+  const s = document.createElement("span");
+  s.className = "chip" + (on ? " on" : "");
+  s.textContent = label;
+  return s;
+}
+function toggleChip(span) {
+  span.addEventListener("click", () => span.classList.toggle("on"));
+}
+function equalizeChips(containerId) {
+  const chips = document.querySelectorAll("#" + containerId + " .chip");
+  let maxW = 0;
+  chips.forEach(c => { maxW = Math.max(maxW, c.scrollWidth); });
+  if (maxW <= 0) return;
+  chips.forEach(c => {
+    c.style.width = maxW + "px";
+    c.style.textAlign = "center";
+  });
+}
+function fillSelect(id, options) {
+  const sel = document.getElementById(id);
+  const any = document.createElement("option");
+  any.value = ""; any.textContent = "不限";
+  sel.appendChild(any);
+  for (const v of options) {
+    const o = document.createElement("option");
+    o.value = v.value; o.textContent = v.label;
+    sel.appendChild(o);
+  }
+  sel.value = "";
+}
+function updateProviderFields() {
+  const provider = document.getElementById("ai-provider").value;
+  const local = provider === "local";
+  document.getElementById("ai-local-fields").style.display = local ? "" : "none";
+  const preset = AI_CONFIG.providers.find(p => p.id === provider);
+  document.getElementById("ai-key").placeholder =
+    local ? "可不填" : "填写 " + preset.label + " 的 API Key";
+  if (local && AI_CONFIG.provider !== "local") {
+    document.getElementById("ai-base-url").value = preset.base_url;
+  }
+}
+async function initAiConfig() {
+  const r = await api("/api/llm_config");
+  if (!r.ok) return;
+  AI_CONFIG = r;
+  const sel = document.getElementById("ai-provider");
+  for (const p of r.providers) {
+    const option = document.createElement("option");
+    option.value = p.id; option.textContent = p.label;
+    sel.appendChild(option);
+  }
+  if (r.providers.some(p => p.id === r.provider)) sel.value = r.provider;
+  document.getElementById("ai-model").value =
+    r.provider === "local" ? r.model : "";
+  document.getElementById("ai-base-url").value =
+    r.provider === "local" ? r.base_url : "";
+  document.getElementById("ai-config-status").textContent =
+    r.configured ? "已配置 " + r.model + "；留空 API Key 可保留原密钥" : "尚未配置";
+  document.getElementById("ai-hint").style.display =
+    r.configured ? "none" : "";
+  updateProviderFields();
+}
+async function saveAiConfig() {
+  showError(null);
+  const body = {
+    provider: val("ai-provider"),
+    api_key: val("ai-key"),
+    model: val("ai-model"),
+    base_url: val("ai-base-url")
+  };
+  const r = await api("/api/llm_config", body);
+  if (!r.ok) { showError(r.message); return; }
+  AI_CONFIG = {...AI_CONFIG, ...r.config};
+  document.getElementById("ai-key").value = "";
+  document.getElementById("ai-config-status").textContent =
+    "已保存 · " + r.config.model;
+}
+async function scanLocalModels() {
+  showError(null);
+  const btn = document.getElementById("scan-models");
+  const status = document.getElementById("ai-config-status");
+  btn.disabled = true;
+  status.textContent = "正在读取模型列表…";
+  try {
+    const r = await api("/api/local_models", {
+      base_url: val("ai-base-url"), api_key: val("ai-key")
+    });
+    if (!r.ok) { status.textContent = r.message; return; }
+    const names = r.models || [];
+    const list = document.getElementById("local-model-list");
+    list.replaceChildren();
+    for (const name of names) {
+      const option = document.createElement("option");
+      option.value = name; list.appendChild(option);
+    }
+    if (names.length && !val("ai-model"))
+      document.getElementById("ai-model").value = names[0];
+    status.textContent = names.length
+      ? `找到 ${names.length} 个模型；可在名称框中选择` +
+        (val("ai-model") && !names.includes(val("ai-model"))
+          ? "（当前名称未在列表中）" : "")
+      : "服务已连接，但没有列出模型";
+  } catch (error) {
+    status.textContent = "无法读取模型列表，请检查本地服务是否已启动";
+  } finally {
+    btn.disabled = false;
+  }
+}
+function selectedFaces() {
+  return [...document.querySelectorAll("#g-type .chip.on")]
+    .map(s => s.dataset.label);
+}
+/* 卡面联动：种类/能力行只在对应卡面被选中（或未选任何卡面）时显示 */
+function updateKindVisibility() {
+  const faces = selectedFaces();
+  document.querySelectorAll(".kind-row").forEach(row => {
+    const show = faces.length === 0 || faces.includes(row.dataset.scope);
+    row.style.display = show ? "" : "none";
+    if (!show) row.querySelectorAll(".chip.on")
+      .forEach(c => c.classList.remove("on"));
+  });
+}
+
+const EFFECT_DIMS = ["eff_targets", "eff_activation", "eff_location",
+  "eff_timing", "eff_negate", "eff_category"];
+const MONSTER_DIMS = ["monster_kind", "monster_ability", "attribute", "race",
+  "atk", "def", ...EFFECT_DIMS];
+const ST_DIMS = ["spell_kind", "trap_kind", ...EFFECT_DIMS];
+const DIM_ORDER = {monster_kind: 0, spell_kind: 1, trap_kind: 2,
+  monster_ability: 3, attribute: 4, race: 5, atk: 6, def: 7,
+  eff_targets: 8, eff_activation: 9, eff_location: 10, eff_timing: 11,
+  eff_negate: 12, eff_category: 13};
+const NUM_ABOVE = [0, 1000, 1500, 2000, 2500, 3000, 4000, 5000];
+const NUM_BELOW = [1000, 1500, 2000, 2500, 3000, 4000, 5000];
+
+let DIM_POOL = null;
+
+function raceLabel(name) {
+  return /[族类]$/.test(name) ? name : name + "族";
+}
+function numCond(field, v, above) {
+  return above
+    ? {field, op: "between", value: [v, null]}
+    : {field, op: "between", value: [null, v]};
+}
+function buildDimPool(VOCAB) {
+  const kindOf = (scope, labels, suffix) => labels.map(k => ({
+    label: k + suffix,
+    cond: {field: "type", op: "bit_has", value: [scope, k]},
+  }));
+  const numDim = field => {
+    const name = field === "atk" ? "攻击力" : "守备力";
+    return [
+      ...NUM_ABOVE.map(v => ({label: name + " " + v + " 以上", cond: numCond(field, v, true)})),
+      ...NUM_BELOW.map(v => ({label: name + " " + v + " 以下", cond: numCond(field, v, false)})),
+    ];
+  };
+  return {
+    monster_kind: kindOf("怪兽", KIND_GROUPS[0].labels, "怪兽"),
+    monster_ability: kindOf("怪兽", KIND_GROUPS[3].labels, "怪兽"),
+    spell_kind: kindOf("魔法", KIND_GROUPS[1].labels, "魔法"),
+    trap_kind: kindOf("陷阱", KIND_GROUPS[2].labels, "陷阱"),
+    attribute: VOCAB.attributes.map(a => ({
+      label: a + "属性",
+      cond: {field: "attribute", op: "bit_has", value: [a]},
+    })),
+    race: VOCAB.races.map(r => ({
+      label: raceLabel(r),
+      cond: {field: "race", op: "bit_has", value: [r]},
+    })),
+    atk: numDim("atk"),
+    def: numDim("def"),
+    eff_targets: VOCAB.effects.targets.map(t => ({
+      label: t.label,
+      cond: {field: "effects", op: "exists", where: {targets: t.value}},
+    })),
+    eff_activation: VOCAB.effects.activation.map(a => ({
+      label: a.label,
+      cond: {field: "effects", op: "exists", where: {activation: [a.value]}},
+    })),
+    eff_location: VOCAB.effects.location.map(l => ({
+      label: "在" + l.label + "发动",
+      cond: {field: "effects", op: "exists", where: {location: [l.value]}},
+    })),
+    eff_timing: VOCAB.effects.timing.map(t => ({
+      label: t.label.replace(/（.*?）/g, ""),
+      cond: {field: "effects", op: "exists", where: {timing: [t.value]}},
+    })),
+    eff_negate: VOCAB.effects.negate_type.map(n => ({
+      label: n.label + "的卡",
+      cond: {field: "effects", op: "exists", where: {negate_type: [n.value]}},
+    })),
+    eff_category: VOCAB.categories.map(c => ({
+      label: c.name,
+      cond: {field: "effects", op: "exists", where: {seg_category_any: [c.bit]}},
+    })),
+  };
+}
+function pickOne(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function sample(arr, n) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+}
+function randomDsl() {
+  const roll = Math.random();
+  const count = roll < 0.2 ? 1 : (roll < 0.7 ? 2 : 3);
+  const r2 = Math.random();
+  let dims;
+  if (r2 < 0.65) {
+    dims = sample(MONSTER_DIMS, count);
+  } else if (r2 < 0.9) {
+    const kind = Math.random() < 0.65 ? "spell_kind" : "trap_kind";
+    dims = [kind, ...sample(EFFECT_DIMS, count - 1)];
+  } else {
+    dims = sample(EFFECT_DIMS, count);
+  }
+  dims.sort((a, b) => DIM_ORDER[a] - DIM_ORDER[b]);
+  const must = [];
+  const labels = [];
+  for (const dim of dims) {
+    const item = pickOne(DIM_POOL[dim]);
+    if (dim === "atk" || dim === "def") {
+      must.push({field: "type", op: "bit_has", value: ["怪兽"]});
+    }
+    must.push(item.cond);
+    labels.push(item.label);
+  }
+  return { must, label: labels.join(" · ") };
+}
+function doExample(dsl) {
+  showError(null);
+  ACTIVE_DSL = dsl;
+  renderSearch(() => api("/api/search",
+    {dsl, limit: PAGE_SIZE, offset: 0, expand_alias: false}));
+}
+async function renderExamples() {
+  const box = document.getElementById("example-chips");
+  box.innerHTML = '<span class="hint">正在随机生成示例…</span>';
+  const picked = [];
+  const seen = new Set();
+  let guard = 0;
+  while (picked.length < 5 && guard++ < 80) {
+    const cand = randomDsl();
+    const key = JSON.stringify(cand.must);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (cand.must.length === 1) { picked.push(cand); continue; }
+    try {
+      const r = await api("/api/search",
+        {dsl: {must: cand.must}, limit: 1, offset: 0, expand_alias: false});
+      if (r.ok && r.total > 0) picked.push(cand);
+    } catch (e) { /* 单次请求失败忽略，继续生成 */ }
+  }
+  box.innerHTML = "";
+  for (const ex of picked) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button";
+    b.textContent = ex.label;
+    b.addEventListener("click", () => doExample({must: ex.must}));
+    box.appendChild(b);
+  }
+}
+async function init() {
+  const r = await api("/api/vocab");
+  if (!r.ok) { showError(r.message); return; }
+  VOCAB = r.vocab;
+  DIM_POOL = buildDimPool(VOCAB);
+  const metaEl = document.getElementById("empty-meta");
+  if (metaEl && r.card_count) {
+    metaEl.textContent = "卡池 " + r.card_count + " 张 · 卡池版本 " +
+      (r.card_version || "未知");
+  }
+  // 卡面（主类型）
+  const gt = document.getElementById("g-type");
+  for (const t of VOCAB.types.filter(t => t.group === "主类型")) {
+    const s = chip(t.label, false);
+    s.dataset.label = t.label; toggleChip(s);
+    s.addEventListener("click", updateKindVisibility);
+    gt.appendChild(s);
+  }
+  // 种类 / 能力（按卡面联动）
+  const kr = document.getElementById("kind-rows");
+  for (const g of KIND_GROUPS) {
+    const row = document.createElement("div");
+    row.className = "kind-row"; row.dataset.scope = g.scope;
+    const lab = document.createElement("label");
+    lab.textContent = g.title;
+    row.appendChild(lab);
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    for (const label of g.labels) {
+      const s = chip(label, false);
+      s.dataset.label = label; toggleChip(s); chips.appendChild(s);
+    }
+    row.appendChild(chips);
+    kr.appendChild(row);
+  }
+  // 属性 / 种族
+  for (const label of VOCAB.attributes) {
+    const s = chip(label, false); s.dataset.label = label;
+    toggleChip(s); document.getElementById("g-attr").appendChild(s);
+  }
+  for (const label of VOCAB.races) {
+    const s = chip(label, false); s.dataset.label = label;
+    toggleChip(s); document.getElementById("g-race").appendChild(s);
+  }
+  equalizeChips("g-race");
+  // 系列自动补全
+  const dl = document.getElementById("setname-list");
+  for (const n of VOCAB.setnames) {
+    const o = document.createElement("option"); o.value = n; dl.appendChild(o);
+  }
+  // 卡池
+  const go = document.getElementById("g-ot");
+  for (const o of VOCAB.ot) {
+    const s = chip(o.label, false);
+    s.dataset.val = o.value; toggleChip(s); go.appendChild(s);
+  }
+  // 禁限情况
+  const gb = document.getElementById("g-ban");
+  for (const [label, val] of [["禁止", 0], ["限制", 1],
+      ["准限制", 2], ["无限制", "none"]]) {
+    const s = chip(label, false);
+    s.dataset.val = val; toggleChip(s); gb.appendChild(s);
+  }
+  // 效果段五维（单选下拉）
+  fillSelect("f-activation", VOCAB.effects.activation);
+  fillSelect("f-timing", VOCAB.effects.timing);
+  fillSelect("f-location", VOCAB.effects.location);
+  fillSelect("f-negate", VOCAB.effects.negate_type);
+  // 效果类型 chips
+  const gc = document.getElementById("g-category");
+  for (const c of VOCAB.categories) {
+    const s = chip(c.name, false);
+    s.dataset.bit = c.bit; toggleChip(s); gc.appendChild(s);
+  }
+  equalizeChips("g-category");
+  document.getElementById("pane-manual").style.display = "";
+  updateKindVisibility();
+  setupPanels();
+  setupNumValidation();
+  renderExamples();
+  await initAiConfig();
+}
+function switchTab(t) {
+  document.getElementById("main-layout").classList.toggle("ai-mode", t === "ai");
+  document.getElementById("pane-manual").style.display =
+    t === "manual" ? "" : "none";
+  document.getElementById("pane-ai").style.display = t === "ai" ? "" : "none";
+  document.getElementById("mode-switch").classList.toggle("ai", t === "ai");
+  document.querySelectorAll(".mode-btn").forEach(b =>
+    b.classList.toggle("on", b.dataset.mode === t));
+  const es = document.querySelector(".empty-state");
+  if (es) es.style.display = t === "manual" ? "" : "none";
+}
+function setupPanels() {
+  document.querySelectorAll("#pane-manual .panel[data-title]").forEach(panel => {
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "panel-head";
+    head.innerHTML = `<span>${panel.dataset.title}</span><span class="panel-arrow">▾</span>`;
+    head.addEventListener("click", () => panel.classList.toggle("collapsed"));
+    const body = document.createElement("div");
+    body.className = "panel-body";
+    while (panel.firstChild) body.appendChild(panel.firstChild);
+    panel.appendChild(head);
+    panel.appendChild(body);
+    if (panel.dataset.collapsed !== undefined) panel.classList.add("collapsed");
+  });
+}
+function setupNumValidation() {
+  const pairs = [["lv-lo", "lv-hi"], ["link-lo", "link-hi"],
+    ["scale-lo", "scale-hi"], ["atk-lo", "atk-hi"], ["def-lo", "def-hi"]];
+  pairs.forEach(([loId, hiId]) => {
+    const lo = document.getElementById(loId);
+    const hi = document.getElementById(hiId);
+    const check = () => {
+      const l = lo.value, h = hi.value;
+      const bad = l !== "" && h !== "" && +l > +h;
+      lo.style.borderColor = bad ? "#c23934" : "";
+      hi.style.borderColor = bad ? "#c23934" : "";
+    };
+    lo.addEventListener("change", check);
+    hi.addEventListener("change", check);
+  });
+}
+function val(id) { return document.getElementById(id).value; }
+function buildDsl() {
+  const must = [];
+  // 卡面 + 种类 + 能力：全部并入一个 type 条件（各位 AND）
+  const typeLabels = [
+    ...document.querySelectorAll("#g-type .chip.on"),
+    ...document.querySelectorAll(".kind-row .chip.on"),
+  ].map(s => s.dataset.label);
+  if (typeLabels.length)
+    must.push({field: "type", op: "bit_has", value: typeLabels});
+  const attrLabels = [...document.querySelectorAll("#g-attr .chip.on")]
+    .map(s => s.dataset.label);
+  if (attrLabels.length)
+    must.push({field: "attribute", op: "bit_has", value: attrLabels});
+  const raceLabels = [...document.querySelectorAll("#g-race .chip.on")]
+    .map(s => s.dataset.label);
+  if (raceLabels.length)
+    must.push({field: "race", op: "bit_has", value: raceLabels});
+  function range(loId, hiId, field) {
+    const lo = val(loId), hi = val(hiId);
+    if (lo === "" && hi === "") return;
+    must.push({field, op: "between",
+      value: [lo === "" ? null : +lo, hi === "" ? null : +hi]});
+  }
+  range("lv-lo", "lv-hi", "level");
+  range("link-lo", "link-hi", "link");
+  range("scale-lo", "scale-hi", "lscale");
+  range("atk-lo", "atk-hi", "atk");
+  range("def-lo", "def-hi", "def");
+  const sn = val("setname").trim();
+  if (sn) must.push({field: "setname", op: "eq", value: sn});
+  const ots = [...document.querySelectorAll("#g-ot .chip.on")]
+    .map(s => +s.dataset.val);
+  if (ots.length) must.push({field: "ot", op: "in", value: ots});
+  const bans = [...document.querySelectorAll("#g-ban .chip.on")]
+    .map(s => s.dataset.val === "none" ? "none" : +s.dataset.val);
+  if (bans.length) must.push({field: "forbidden", op: "in", value: bans});
+  const nk = val("name-kw").trim();
+  if (nk) must.push({field: "name", op: "contains", value: nk});
+  const dk = val("desc-kw").trim();
+  if (dk) must.push({field: "desc", op: "contains", value: dk});
+  // 效果段五维（单选下拉，选中即传单值数组）
+  const where = {};
+  if (val("f-activation")) where.activation = [val("f-activation")];
+  if (val("f-timing")) where.timing = [val("f-timing")];
+  if (val("f-location")) where.location = [val("f-location")];
+  if (val("f-targets") !== "") where.targets = +val("f-targets");
+  if (val("f-negate")) where.negate_type = [val("f-negate")];
+  const catBits = [...document.querySelectorAll("#g-category .chip.on")]
+    .map(s => s.dataset.bit === "ritual" ? "ritual" : +s.dataset.bit);
+  if (catBits.length) where.seg_category_any = catBits;
+  if (document.getElementById("f-exclude-negate").checked)
+    where.exclude_negate = true;
+  if (Object.keys(where).length)
+    must.push({field: "effects", op: "exists", where});
+  return {must};
+}
+function showToast(msg, undoFn) {
+  const t = document.getElementById("toast");
+  t.querySelector(".toast-msg").textContent = msg;
+  const undoBtn = t.querySelector(".toast-undo");
+  undoBtn.style.display = undoFn ? "" : "none";
+  undoBtn.onclick = undoFn || null;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 4000);
+}
+function chipId(s) {
+  if (s.dataset.label !== undefined) return "label:" + s.dataset.label;
+  if (s.dataset.val !== undefined) return "val:" + s.dataset.val;
+  if (s.dataset.bit !== undefined) return "bit:" + s.dataset.bit;
+  return "";
+}
+function snapshotFilters() {
+  const onChips = new Set([...document.querySelectorAll("#pane-manual .chip.on")]
+    .map(chipId));
+  return {
+    onChips,
+    numbers: [...document.querySelectorAll("#pane-manual input[type=number]")]
+      .map(i => [i.id, i.value]),
+    texts: {name: val("name-kw"), setname: val("setname"), desc: val("desc-kw")},
+    selects: ["f-activation", "f-timing", "f-location", "f-targets", "f-negate"]
+      .map(id => [id, val(id)]),
+    excludeNegate: document.getElementById("f-exclude-negate").checked,
+  };
+}
+function restoreFilters(snap) {
+  document.querySelectorAll("#pane-manual .chip").forEach(s => {
+    s.classList.toggle("on", snap.onChips.has(chipId(s)));
+  });
+  snap.numbers.forEach(([id, v]) => { document.getElementById(id).value = v; });
+  document.getElementById("name-kw").value = snap.texts.name;
+  document.getElementById("setname").value = snap.texts.setname;
+  document.getElementById("desc-kw").value = snap.texts.desc;
+  snap.selects.forEach(([id, v]) => { document.getElementById(id).value = v; });
+  document.getElementById("f-exclude-negate").checked = snap.excludeNegate;
+  updateKindVisibility();
+}
+function resetManual() {
+  const snap = snapshotFilters();
+  const hasAny = snap.onChips.size > 0 ||
+    snap.numbers.some(([, v]) => v !== "") ||
+    snap.texts.name || snap.texts.setname || snap.texts.desc ||
+    snap.selects.some(([, v]) => v !== "") || snap.excludeNegate;
+  document.querySelectorAll(".chip.on").forEach(s => s.classList.remove("on"));
+  document.querySelectorAll(
+    "#pane-manual input[type=number], #setname, #name-kw, #desc-kw")
+    .forEach(i => i.value = "");
+  ["f-activation", "f-timing", "f-location", "f-targets", "f-negate"]
+    .forEach(id => document.getElementById(id).value = "");
+  document.getElementById("f-exclude-negate").checked = false;
+  updateKindVisibility();
+  if (hasAny) showToast("已清空全部条件", () => restoreFilters(snap));
+}
+function onSortChange() {
+  const sort = document.getElementById("sort-select").value || null;
+  ACTIVE_SORT = sort;
+  if (!ACTIVE_DSL) return;
+  const dsl = ACTIVE_DSL;
+  renderSearch(() => api("/api/search",
+    {dsl, limit: PAGE_SIZE, offset: 0, expand_alias: false, sort}), 0);
+}
+async function doManualSearch() {
+  showError(null);
+  const dsl = buildDsl();
+  ACTIVE_DSL = dsl;
+  ACTIVE_SORT = null;
+  const sortSel = document.getElementById("sort-select");
+  if (sortSel) sortSel.value = "";
+  await renderSearch(() => api("/api/search",
+    {dsl, limit: PAGE_SIZE, offset: 0, expand_alias: false, sort: null}));
+}
+async function doNlSearch() {
+  showError(null);
+  const q = document.getElementById("nl-query").value.trim();
+  if (!q) { showError("请输入查询"); return; }
+  const btn = document.getElementById("nl-btn");
+  btn.disabled = true; btn.textContent = "思考中…";
+  ACTIVE_DSL = null;
+  try { await renderSearch(() => api("/api/nl_search",
+    {query: q, limit: PAGE_SIZE, offset: 0})); }
+  finally { btn.disabled = false; btn.textContent = "搜索"; }
+}
+function updatePagers() {
+  const pages = Math.ceil(TOTAL_RESULTS / PAGE_SIZE);
+  document.querySelectorAll(".pager").forEach(pager => {
+    pager.hidden = pages <= 1;
+    if (pager.hidden) { pager.innerHTML = ""; return; }
+    pager.innerHTML = `
+      <button class="btn ghost" onclick="goToPage(0)" ${CURRENT_PAGE === 0 ? "disabled" : ""}>首页</button>
+      <button class="btn ghost" onclick="goToPage(CURRENT_PAGE-1)" ${CURRENT_PAGE === 0 ? "disabled" : ""}>上一页</button>
+      <span class="pager-status">第 ${CURRENT_PAGE + 1} / ${pages} 页</span>
+      <button class="btn ghost" onclick="goToPage(CURRENT_PAGE+1)" ${CURRENT_PAGE >= pages - 1 ? "disabled" : ""}>下一页</button>
+      <button class="btn ghost" onclick="goToPage(${pages - 1})" ${CURRENT_PAGE >= pages - 1 ? "disabled" : ""}>末页</button>
+      <input class="pager-jump" type="number" min="1" max="${pages}" value="${CURRENT_PAGE + 1}"
+        aria-label="跳转页码" onkeydown="if(event.key==='Enter')jumpToPage(this)">
+      <button class="btn ghost" onclick="jumpToPage(this)">跳转</button>`;
+  });
+}
+function jumpToPage(el) {
+  const input = el.closest(".pager").querySelector(".pager-jump");
+  const page = Number(input.value);
+  if (!Number.isInteger(page) || page < 1 || page > Math.ceil(TOTAL_RESULTS / PAGE_SIZE)) {
+    input.focus(); return;
+  }
+  goToPage(page - 1);
+}
+async function goToPage(page) {
+  if (!ACTIVE_DSL || !Number.isInteger(page) || page < 0 ||
+      page >= Math.ceil(TOTAL_RESULTS / PAGE_SIZE) || page === CURRENT_PAGE) return;
+  const dsl = ACTIVE_DSL;
+  await renderSearch(() => api("/api/search",
+    {dsl, limit: PAGE_SIZE, offset: page * PAGE_SIZE, expand_alias: false,
+     sort: ACTIVE_SORT}), page);
+  document.getElementById("result-summary").scrollIntoView({block: "start"});
+}
+async function renderSearch(fetcher, page = 0) {
+  const requestSerial = ++searchRequestSerial;
+  const box = document.getElementById("cards");
+  ++detailRequestSerial;
+  if (document.getElementById("dlg").open) document.getElementById("dlg").close();
+  RESULT_CARDS = [];
+  TOTAL_RESULTS = 0;
+  document.getElementById("result-summary").style.display = "none";
+  updatePagers();
+  box.innerHTML = '<div class="loading"><span class="spin"></span>检索中…</div>';
+  let r;
+  try { r = await fetcher(); }
+  catch (e) {
+    if (requestSerial === searchRequestSerial) {
+      box.innerHTML = ""; showError("检索请求失败，请重试");
+    }
+    return;
+  }
+  if (requestSerial !== searchRequestSerial) return;
+  if (!r.ok) { box.innerHTML = ""; showError(r.message); return; }
+  if (r.dsl) ACTIVE_DSL = r.dsl;
+  RESULT_CARDS = r.cards;
+  CURRENT_PAGE = page;
+  TOTAL_RESULTS = r.total;
+  updatePagers();
+  document.getElementById("result-summary").style.display = "";
+  const range = r.total
+    ? `（第 ${page * PAGE_SIZE + 1}–${page * PAGE_SIZE + r.cards.length} 张）` : "";
+  SUMMARY_FULL = `条件：<b>${escapeHtml(r.described)}</b>　命中 <b>${r.total}</b> 张${range}`;
+  SUMMARY_SHORT = `命中 <b>${r.total}</b> 张${range}　<span class="hint">（点击展开条件）</span>`;
+  summaryExpanded = false;
+  updateSummary();
+  document.getElementById("sort-bar").hidden = false;
+  box.innerHTML = "";
+  if (!r.cards.length) {
+    document.getElementById("sort-bar").hidden = true;
+    box.innerHTML = '<div class="empty">没有符合条件的卡</div>'; return;
+  }
+  for (const c of r.cards) {
+    const el = document.createElement("div");
+    el.className = "card";
+    const isMonster = c.main_type === "怪兽";
+    const kindText = c.main_type + "/" + (c.kinds.length ? c.kinds.join("/") : "通常");
+    const badges = [
+      `<span class="badge">${escapeHtml(c.ot_label)}</span>`,
+      `<span class="badge">${escapeHtml(kindText)}</span>`,
+    ];
+    if (isMonster) {
+      if (c.level > 0) badges.push(
+        `<span class="badge">${c.is_link ? "LINK " : "Lv"}${c.level}</span>`);
+      if (c.abilities && c.abilities.length)
+        badges.push(`<span class="badge sp">${escapeHtml(c.abilities.join("、"))}</span>`);
+    }
+    if (c.forbidden !== null && c.forbidden !== undefined)
+      badges.push(`<span class="badge warn">${
+        ["禁止", "限制", "准限制"][c.forbidden] || "限" + c.forbidden}</span>`);
+    const line2 = isMonster
+      ? `<div class="line2">${escapeHtml(c.race)}／${escapeHtml(c.attribute)}　攻 ${escapeHtml(c.atk_str)}　守 ${escapeHtml(c.def_str)}</div>`
+      : "";
+    const descHtml = escapeHtml(c.desc || "").replace(/\n/g, "<br>");
+    el.innerHTML =
+      `<div class="line1"><span class="name">${escapeHtml(c.name)}</span>
+        <button class="copy-btn" title="复制卡名" aria-label="复制卡名">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>${badges.join("")}</div>
+       ${line2}
+       <div class="card-desc clamped">${descHtml}</div>`;
+    const copyBtn = el.querySelector(".copy-btn");
+    copyBtn.addEventListener("click", ev => {
+      ev.stopPropagation(); copyText(c.name);
+    });
+    el.addEventListener("click", () => openCard(c.id));
+    box.appendChild(el);
+    const descEl = el.querySelector(".card-desc");
+    if (descEl && descEl.scrollHeight > descEl.clientHeight + 1) {
+      const btn = document.createElement("button");
+      btn.className = "expand-btn";
+      btn.textContent = "展开";
+      btn.addEventListener("click", ev => {
+        ev.stopPropagation();
+        const clamped = descEl.classList.toggle("clamped");
+        btn.textContent = clamped ? "展开" : "收起";
+      });
+      descEl.after(btn);
+    } else if (descEl) {
+      descEl.classList.remove("clamped");
+    }
+  }
+}
+function copyText(text) {
+  const done = () => showToast("已复制卡名：" + text);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, done);
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
+  }
+}
+function updateSummary() {
+  const el = document.getElementById("result-summary");
+  el.innerHTML = summaryExpanded ? SUMMARY_FULL : SUMMARY_SHORT;
+  el.title = summaryExpanded ? "点击收起条件详情" : "点击展开条件详情";
+}
+function effectLabel(dimension, value) {
+  if (value === "none") return "不适用";
+  const item = VOCAB.effects[dimension].find(option => option.value === value);
+  return item ? item.label : "未分类";
+}
+function moveCard(step) {
+  const index = Number(document.getElementById("dlg").dataset.index);
+  const next = index + step;
+  if (next >= 0 && next < RESULT_CARDS.length) openCard(RESULT_CARDS[next].id);
+}
+async function openCard(id) {
+  const serial = ++detailRequestSerial;
+  const r = await api("/api/card/" + id);
+  if (serial !== detailRequestSerial) return;
+  if (!r.ok) { showError(r.message); return; }
+  const c = r.card;
+  const index = RESULT_CARDS.findIndex(item => item.id === id);
+  const dialog = document.getElementById("dlg");
+  dialog.dataset.index = index;
+  document.getElementById("dlg-prev").disabled = index <= 0;
+  document.getElementById("dlg-next").disabled =
+    index < 0 || index >= RESULT_CARDS.length - 1;
+  document.getElementById("dlg-position").textContent =
+    index < 0 ? "" : `${index + 1} / ${RESULT_CARDS.length}`;
+  document.getElementById("dlg-title").textContent = c.name;
+  const segHtml = (c.effects || []).map(s => {
+    const no = s.seg_type === "pendulum" ? `灵摆${Math.abs(s.effect_no)}`
+      : s.seg_type === "rule" ? "规则"
+      : s.effect_no > 0 ? "第" + "①②③④⑤⑥⑦⑧⑨⑩"[s.effect_no - 1] + "段"
+      : ({monster: "怪兽效果", spell_trap: "魔法·陷阱效果",
+          flavor: "描述文本"}[s.seg_type] || "效果段");
+    const dims = [];
+    if (s.targets !== null && s.targets !== undefined)
+      dims.push(s.targets ? "取对象" : "不取对象");
+    if (s.activation) dims.push("发动：" + effectLabel("activation", s.activation));
+    if (s.location) dims.push("地点：" + effectLabel("location", s.location));
+    if (s.timing) dims.push("时点：" + effectLabel("timing", s.timing));
+    if (s.negate_type) dims.push("无效：" + effectLabel("negate_type", s.negate_type));
+    dims.push(...(s.seg_category_names || []));
+    return `<div class="seg"><span class="seg-no">${no}</span>
+      <div class="seg-text">${escapeHtml(s.text || "")}</div>
+      <div class="dims">${dims.map(d =>
+        `<span class="badge">${escapeHtml(d)}</span>`).join("")}</div></div>`;
+  }).join("");
+  document.getElementById("dlg-body").innerHTML =
+    `<div class="kv">
+      <span class="k">卡池</span><span>${escapeHtml(c.ot_label)}</span>
+      <span class="k">种族/属性</span><span>${escapeHtml(c.race)}／${escapeHtml(c.attribute)}</span>
+      <span class="k">数值</span><span>${c.is_link ? "LINK " : "Lv"}${c.level}　攻 ${escapeHtml(c.atk_str)}　守 ${escapeHtml(c.def_str)}</span>
+      <span class="k">系列</span><span>${escapeHtml(c.setnames.join("、") || "—")}</span>
+     </div>
+     <div style="font-size:12px;color:var(--muted);margin:6px 0">
+       效果段与五维分类（自动标注，仅供参考）：</div>
+     ${segHtml || '<div class="hint">（无效果段）</div>'}`;
+  document.getElementById("dlg-body").scrollTop = 0;
+  if (!dialog.open) dialog.showModal();
+}
+document.addEventListener("keydown", ev => {
+  const dlg = document.getElementById("dlg");
+  if (!dlg.open) return;
+  if (ev.key === "Escape") { dlg.close(); return; }
+  if (ev.key === "ArrowLeft") moveCard(-1);
+  if (ev.key === "ArrowRight") moveCard(1);
+});
+document.getElementById("result-summary").addEventListener("click", () => {
+  if (!SUMMARY_FULL) return;
+  summaryExpanded = !summaryExpanded;
+  updateSummary();
+});
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "providers": [
+    {"id": "deepseek", "label": "DeepSeek", "base_url": "https://api.deepseek.com", "model": "deepseek-flash", "needs_key": true},
+    {"id": "glm", "label": "GLM（智谱）", "base_url": "https://open.bigmodel.cn/api/paas/v4", "model": "glm-4.6", "needs_key": true},
+    {"id": "kimi", "label": "Kimi（月之暗面）", "base_url": "https://api.moonshot.cn/v1", "model": "kimi-k2.5", "needs_key": true},
+    {"id": "local", "label": "本地 AI 服务", "base_url": "http://127.0.0.1:8000/v1", "model": "", "needs_key": false}
+  ]
+}

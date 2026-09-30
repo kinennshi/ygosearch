@@ -1,0 +1,6 @@
+# 游戏王OCG检定测试模拟试验(全29问）
+
+> 所属：第三章 游戏王OCG检定测试
+> 来源：[OCG 完全规则书 2020 中文翻译](https://ocg-rulebook.readthedocs.io/zh-cn/latest/)
+
+由于此模拟试验和官方公开的 [2019年OCG规则检定测试题](https://ocg-rule.readthedocs.io/zh_CN/latest/c05/2019%E5%B9%B4%E6%B8%B8%E6%88%8F%E7%8E%8BOCG%E8%A7%84%E5%88%99%E6%A3%80%E5%AE%9A%E6%B5%8B%E8%AF%95.html) 基本一致，不再重复翻译。
