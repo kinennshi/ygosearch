@@ -1,0 +1,386 @@
+/* Card-inspired skin. Layout, spacing and responsive breakpoints live in index.html. */
+:root {
+  --bg: #e9e4da;
+  --panel: #fffcf4;
+  --border: #c8baa1;
+  --text: #302b24;
+  --muted: #706454;
+  --accent: #78501d;
+  --accent-weak: #eee1c3;
+  --chip-bg: #f1ebde;
+  --chip-on: #78501d;
+  --danger: #a73336;
+  --ok: #26705b;
+  --radius: 5px;
+  --gold: #c8a65e;
+}
+body {
+  background-image: repeating-linear-gradient(112deg, transparent 0 3px, #75614104 3px 4px);
+}
+header {
+  background: linear-gradient(110deg, #242825, #343931);
+  border-bottom-color: var(--gold);
+  box-shadow: 0 2px 9px #26221a20, inset 0 -3px #c8a65e16;
+  color: #f4e3b5;
+}
+header h1 { text-shadow: 0 1px 0 #000; }
+header .sub { color: #c6c6b8; }
+.mode-switch { background: #161c19; border-color: #716346; }
+.mode-switch .mode-thumb { background: linear-gradient(135deg, #d0b579, #94703b); box-shadow: inset 0 0 0 1px #eddaa7; }
+.mode-switch .mode-btn { color: #bcbcae; }
+.mode-switch .mode-btn.on { color: #211d15; }
+.panel, .api-config[open] {
+  background: linear-gradient(120deg, #fffdf7, #f8f2e5);
+  border-color: var(--border);
+  box-shadow: inset 0 0 0 3px #fffaf0, inset 0 0 0 4px #d9ccb555, 0 2px 4px #33281708;
+}
+.panel-head { color: #5e4324; }
+.panel-head .panel-arrow { color: #9a7b45; }
+.chip {
+  border-radius: 4px;
+  background: linear-gradient(#faf7ef, #ebe3d4);
+  border-color: #d0c4af;
+  box-shadow: inset 0 1px #ffffffcc;
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.chip:hover { border-color: #9a793f; box-shadow: inset 0 1px #fff, 0 0 0 1px #aa8a4833; }
+.chip.on { background: linear-gradient(#896534, #69451d); border-color: #69451d; box-shadow: inset 0 1px #b99b66; }
+#g-type .chip[data-label="怪兽"] { --chip-tone: #996028; --chip-tint: #f6e1c4; }
+#g-type .chip[data-label="魔法"], .kind-row[data-scope="魔法"] .chip { --chip-tone: #247b69; --chip-tint: #deefe6; }
+#g-type .chip[data-label="陷阱"], .kind-row[data-scope="陷阱"] .chip { --chip-tone: #9b4f76; --chip-tint: #f4e2ec; }
+.kind-row[data-scope="怪兽"] .chip[data-label="仪式"] { --chip-tone: #407595; --chip-tint: #e0ecf3; }
+.kind-row[data-scope="怪兽"] .chip[data-label="融合"] { --chip-tone: #825a98; --chip-tint: #ebe1f1; }
+.kind-row[data-scope="怪兽"] .chip[data-label="同调"] { --chip-tone: #667477; --chip-tint: #f4f6f3; }
+.kind-row[data-scope="怪兽"] .chip[data-label="超量"] { --chip-tone: #414652; --chip-tint: #e4e5e8; }
+.kind-row[data-scope="怪兽"] .chip[data-label="灵摆"] { --chip-tone: #397b60; --chip-tint: #dfebdf; }
+.kind-row[data-scope="怪兽"] .chip[data-label="连接"] { --chip-tone: #2e6aa2; --chip-tint: #dfeaf7; }
+#g-type .chip, .kind-row[data-scope="怪兽"] .chip,
+.kind-row[data-scope="魔法"] .chip, .kind-row[data-scope="陷阱"] .chip {
+  color: var(--chip-tone, var(--text));
+  background: var(--chip-tint, var(--chip-bg));
+}
+#g-type .chip.on, .kind-row .chip.on { background: var(--chip-tone, var(--chip-on)); color: #fff; border-color: var(--chip-tone, var(--chip-on)); }
+/* Attribute medallions use the existing text and exact chip dimensions. */
+#g-attr .chip { border-radius: 999px; color: var(--attribute-color); background: var(--attribute-bg); border-color: var(--attribute-color); box-shadow: inset 0 0 0 2px #ffffff77; font-weight: 400; }
+#g-attr [data-label="地"] { --attribute-color: #79502e; --attribute-bg: #efe0bd; }
+#g-attr [data-label="水"] { --attribute-color: #286b9b; --attribute-bg: #e0edf7; }
+#g-attr [data-label="炎"] { --attribute-color: #aa392c; --attribute-bg: #f8e2d6; }
+#g-attr [data-label="风"] { --attribute-color: #36785d; --attribute-bg: #e2eedc; }
+#g-attr [data-label="光"] { --attribute-color: #866411; --attribute-bg: #fbefb9; }
+#g-attr [data-label="暗"] { --attribute-color: #705383; --attribute-bg: #eee3f2; }
+#g-attr [data-label="神"] { --attribute-color: #8a611f; --attribute-bg: #f5deab; }
+#g-attr .chip.on { color: #fff; background: var(--attribute-color); box-shadow: inset 0 0 0 2px #ffffff55, 0 0 0 1px var(--attribute-color); }
+#g-race .chip:not(.on) { background-image: linear-gradient(120deg, #ffffff77, transparent); }
+input[type=text], input[type=number], input[type=password], select {
+  background-color: #fffef9; border-color: #cfc1a9;
+  box-shadow: inset 0 1px 3px #493a2210;
+}
+input::placeholder { color: #928775; }
+input, select, button { accent-color: var(--accent); }
+:is(input, select, button, summary):focus-visible { outline: 2px solid #96713a; outline-offset: 3px; }
+.num-field, .field-cond { background: #f2ecdf; border-color: #ccbea4; }
+.field-cond { border-style: solid; }
+.btn { background: linear-gradient(#896532, #69491f); box-shadow: inset 0 1px #c3a16b, 0 1px 2px #38261125; }
+.btn:not(:disabled):hover { filter: brightness(1.1); }
+.btn.ghost { background: #fffaf0; border-color: #b39762; color: #735222; box-shadow: inset 0 1px #fff; }
+.action-bar, .pager { background: var(--bg); }
+.ai-heading { color: #4b3821; text-shadow: 0 1px #fff7da, 0 2px #bda78066; }
+.nl-row { background: #fffdf6; border-color: #b99b65; box-shadow: 0 8px 28px #4d3c1b16, 0 0 0 3px #d8c6a238; }
+.nl-row:focus-within { border-color: #886127; box-shadow: 0 8px 28px #4d3c1b16, 0 0 0 3px #b99b6540; }
+.nl-row input[type=text] { box-shadow: none; background: transparent; }
+.api-config summary { color: #756044; }
+.empty-state { position: relative; background: #f4efe4; border-style: solid; border-color: #c6b99c; box-shadow: inset 0 0 0 6px #e9e0ce, inset 0 0 0 7px #c6b99c80; }
+.empty-state .empty-icon { border-radius: 4px; background: transparent; position: relative; }
+.empty-icon::before, .empty-icon::after { content: ""; position: absolute; width: 30px; height: 44px; border-radius: 3px; background: url('/assets/card-back.jpg') center / 100% 100%; box-shadow: 0 2px 4px #35231238; }
+.empty-icon::before { transform: translateX(-7px) rotate(-14deg); }
+.empty-icon::after { transform: translateX(7px) rotate(10deg); }
+.empty-icon svg { visibility: hidden; }
+.empty-state .example-chips .chip { background: #fffaf0; }
+/* Frames echo printed card categories; all text stays on a light readable surface. */
+[data-frame] { --frame: #b57c44; --frame-light: #eddbbf; }
+[data-frame="normal"] { --frame: #b29a4a; --frame-light: #eee1b6; }
+[data-frame="spell"] { --frame: #408d7c; --frame-light: #d4e9df; }
+[data-frame="trap"] { --frame: #a45d87; --frame-light: #ecd6e4; }
+[data-frame="ritual"] { --frame: #5b8cad; --frame-light: #d9e6ef; }
+[data-frame="fusion"] { --frame: #9272a4; --frame-light: #e5d9ed; }
+[data-frame="synchro"] { --frame: #929f9e; --frame-light: #f2f4ef; }
+[data-frame="xyz"] { --frame: #505562; --frame-light: #dbdde4; }
+[data-frame="link"] { --frame: #3978b0; --frame-light: #d4e4f4; }
+[data-frame="pendulum"] { --frame: #558970; --frame-light: #e2e5c9; }
+.card { border-color: var(--frame); background: linear-gradient(110deg, var(--frame-light), #fffaf0 85%); box-shadow: inset 0 0 0 3px #fff9e66e, inset 0 0 0 4px #73562d20, 0 2px 3px #3226130c; }
+.card:hover { border-color: var(--frame); box-shadow: inset 0 0 0 3px #fff9e680, inset 0 0 0 4px var(--frame), 0 2px 6px #32261320; }
+.card .name { color: #30291f; text-shadow: 0 1px #ffffff99; }
+.card-desc { background: #fffaf0b8; color: #665b4b; outline: 1px solid #88735425; }
+.badge { background: #fffbf1b3; color: #665945; box-shadow: inset 0 0 0 1px #947f5926; }
+.badge.sp, .seg .dims .badge { background: #efe5d1; color: #755424; }
+.badge.warn { background: #fbe4e0; color: var(--danger); }
+dialog { border-color: var(--frame, var(--gold)); background: #fbf6e9; color: var(--text); box-shadow: 0 20px 80px #151a1766, 0 0 0 4px #e0cca6; }
+dialog::backdrop { background: #171d1b99; backdrop-filter: blur(3px); }
+.dlg-head { background: linear-gradient(105deg, var(--frame-light, #ead9b7), #faf2df); border-bottom-color: var(--frame, var(--border)); box-shadow: inset 0 3px #fff8e699; }
+.seg { background: #fffdf5; border-color: #c9b795; box-shadow: inset 0 0 0 2px #f0e8d7; }
+.kv { color: #493d2b; }
+#toast { background: #2b302a; border: 1px solid #ae9058; }
+#toast .toast-undo { color: #edcc85; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+
+/* Imported icons occupy existing padding; chip widths and wrapping are unchanged. */
+#g-attr .chip, #g-race .chip { position: relative; padding-left: 22px; padding-right: 2px; }
+#g-attr .chip::before, #g-race .chip::before { content: ""; position: absolute; left: 3px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; background: var(--icon) center / contain no-repeat; pointer-events: none; }
+#g-attr [data-label="光"] { --icon: url("/assets/attribute/light.png"); }
+#g-attr [data-label="暗"] { --icon: url("/assets/attribute/dark.png"); }
+#g-attr [data-label="水"] { --icon: url("/assets/attribute/water.png"); }
+#g-attr [data-label="炎"] { --icon: url("/assets/attribute/fire.png"); }
+#g-attr [data-label="地"] { --icon: url("/assets/attribute/earth.png"); }
+#g-attr [data-label="风"] { --icon: url("/assets/attribute/wind.png"); }
+#g-attr [data-label="神"] { --icon: url("/assets/attribute/divine.png"); }
+#g-race [data-label="战士"] { --icon: url("/assets/race/warrior.png"); }
+#g-race [data-label="魔法师"] { --icon: url("/assets/race/spellcaster.png"); }
+#g-race [data-label="天使"] { --icon: url("/assets/race/fairy.png"); }
+#g-race [data-label="恶魔"] { --icon: url("/assets/race/fiend.png"); }
+#g-race [data-label="不死"] { --icon: url("/assets/race/zombie.png"); }
+#g-race [data-label="机械"] { --icon: url("/assets/race/machine.png"); }
+#g-race [data-label="水族"] { --icon: url("/assets/race/aqua.png"); }
+#g-race [data-label="炎"] { --icon: url("/assets/race/pyro.png"); }
+#g-race [data-label="岩石"] { --icon: url("/assets/race/rock.png"); }
+#g-race [data-label="鸟兽"] { --icon: url("/assets/race/windbeast.png"); }
+#g-race [data-label="植物"] { --icon: url("/assets/race/plant.png"); }
+#g-race [data-label="昆虫"] { --icon: url("/assets/race/insect.png"); }
+#g-race [data-label="雷"] { --icon: url("/assets/race/thunder.png"); }
+#g-race [data-label="龙"] { --icon: url("/assets/race/dragon.png"); }
+#g-race [data-label="兽"] { --icon: url("/assets/race/beast.png"); }
+#g-race [data-label="兽战士"] { --icon: url("/assets/race/beastwarrior.png"); }
+#g-race [data-label="恐龙"] { --icon: url("/assets/race/dinosaur.png"); }
+#g-race [data-label="鱼"] { --icon: url("/assets/race/fish.png"); }
+#g-race [data-label="海龙"] { --icon: url("/assets/race/seaserpent.png"); }
+#g-race [data-label="爬虫类"] { --icon: url("/assets/race/reptile.png"); }
+#g-race [data-label="念动力"] { --icon: url("/assets/race/psycho.png"); }
+#g-race [data-label="幻神兽"] { --icon: url("/assets/race/divinebeast.png"); }
+#g-race [data-label="创造神"] { --icon: url("/assets/race/creatorgod.png"); }
+#g-race [data-label="幻龙"] { --icon: url("/assets/race/wyrm.png"); }
+#g-race [data-label="电子界"] { --icon: url("/assets/race/cyberse.png"); }
+#g-race [data-label="幻想魔"] { --icon: url("/assets/race/illustion.png"); }
+
+/* Printed-card geometry: square-cut edges, raised title rails, inset text wells. */
+:root {
+  --radius: 2px;
+  --edge-light: #fff5d9;
+  --edge-dark: #8a7451;
+  --text: #30291f;
+  --muted: #665b4b;
+  --bevel: inset 1px 1px 0 var(--edge-light), inset -1px -1px 0 #8a745166;
+  --frame-inset: inset 0 0 0 2px #f6e9cc, inset 0 0 0 3px #af9770;
+}
+.panel, .api-config[open], .empty-state, dialog, main.ai-mode .summary {
+  border-radius: var(--radius);
+  border-color: var(--edge-dark);
+  box-shadow: var(--frame-inset), 0 2px 5px #32261312;
+}
+.panel, .api-config[open] { background: linear-gradient(115deg, #efe1c4, #f8efd9 55%, #e9d8b5); }
+.panel-head { color: #4b3520; text-shadow: 0 1px #fff8df; }
+.panel-head > span:first-child { border-bottom: 1px solid #ac9162; }
+.panel-head .panel-arrow { color: #73572e; }
+/* A single raised, rectangular treatment for every actionable control. */
+.chip, #g-attr .chip, .btn, .btn.ghost, .reshuffle,
+.nl-row .btn, .expand-btn, .dlg-actions .btn {
+  border-radius: var(--radius);
+  box-shadow: var(--bevel);
+}
+.chip { border-color: #b8a482; background: linear-gradient(110deg, #fbf4e3, #eaddbf); }
+.chip.on { box-shadow: inset 1px 1px #37271280, inset -1px -1px #f0d7a666; }
+#g-attr .chip { box-shadow: var(--bevel); }
+#g-attr .chip.on { box-shadow: inset 1px 1px #0005, inset -1px -1px #fff5; }
+.btn { background: linear-gradient(110deg, #956b34, #795024); color: #fff9eb; }
+.btn.ghost { background: linear-gradient(110deg, #fff6e1, #e9daba); color: #65471e; border-color: #9a7c48; }
+.chip:hover, .btn:not(:disabled):hover { filter: none; box-shadow: var(--bevel), 0 0 0 1px #876438; }
+input[type=text], input[type=number], input[type=password], select,
+.num-field, .field-cond, .badge, .error, #toast { border-radius: var(--radius); }
+input[type=text], input[type=number], input[type=password], select {
+  background: #fffcf1; border-color: #b7a17b;
+  box-shadow: inset 1px 1px 2px #66523224, inset -1px -1px #fff;
+}
+.num-field, .field-cond { background: #f7efd9; box-shadow: inset 0 0 0 2px #fff9e8; }
+.nl-row, .nl-row input[type=text] { border-radius: var(--radius); }
+.nl-row { border-color: #9d8357; box-shadow: var(--frame-inset), 0 6px 16px #49351a12; }
+.nl-row input[type=text] { background: transparent; box-shadow: none; }
+.mode-switch, .mode-switch .mode-thumb, .mode-switch .mode-btn { border-radius: var(--radius); }
+.mode-switch .mode-thumb { box-shadow: var(--bevel); }
+.badge { box-shadow: none; border: 1px solid #a890642e; }
+.card {
+  border-radius: var(--radius); border-color: #76664e;
+  background: linear-gradient(110deg, var(--frame-light), color-mix(in srgb, var(--frame) 32%, #fff7df));
+  box-shadow: inset 0 0 0 2px #fff3d888, inset 0 0 0 3px var(--frame), 0 2px 4px #32261318;
+}
+.card:hover { border-color: var(--frame); box-shadow: inset 0 0 0 2px #fff3d8, inset 0 0 0 3px var(--frame), 0 2px 7px #32261326; }
+.card .line1, .dlg-head {
+  background: linear-gradient(105deg, #ffffff25, #ffffff08);
+  box-shadow: inset 1px 1px #fff9df99, inset -1px -1px #60452644;
+}
+.card .line1 { padding: 5px 8px; border: 1px solid #81643855; }
+.card .line2 { padding: 3px 2px 0; color: #514632; }
+/* Pale effect box with a fine inner rule and four corner plates, like the card reference. */
+.card-desc, .seg {
+  border: 1px solid #8c7045; border-radius: 0; outline: none;
+  padding: 10px 12px; color: #342d22;
+  background:
+    linear-gradient(#ae8551, #ae8551) top left / 4px 4px no-repeat,
+    linear-gradient(#ae8551, #ae8551) top right / 4px 4px no-repeat,
+    linear-gradient(#ae8551, #ae8551) bottom left / 4px 4px no-repeat,
+    linear-gradient(#ae8551, #ae8551) bottom right / 4px 4px no-repeat,
+    linear-gradient(110deg, #faf2df, #fff9ec 52%, #f3e7ce);
+  box-shadow: inset 0 0 0 2px #d5bd8c, inset 0 0 0 3px #fff8e8;
+}
+.card-desc { font-size: 13px; line-height: 1.75; max-height: none; overflow-wrap: anywhere; }
+.card-desc.clamped { max-height: none; overflow: visible; }
+.card-desc.clamped .card-desc-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
+.seg .seg-text { line-height: 1.75; margin: 6px 0 8px; }
+.expand-btn { padding: 3px 10px; border: 1px solid #b19a70; background: #faf0d9; color: #62451d; }
+.dlg-head { background-color: var(--frame-light, #e9d8b5); border-bottom-color: #8c7045; }
+.dlg-body { background: #f1e6cd; }
+/* Category icons: unchanged upstream PNGs, with card-frame tint variants below. */
+.kind-row:not([data-group="怪兽能力"]) .chip {
+  position: relative; padding-left: 22px; padding-right: 2px;
+}
+.kind-row:not([data-group="怪兽能力"]) .chip::before {
+  content: ""; position: absolute; left: 3px; top: 50%;
+  transform: translateY(-50%); width: 16px; height: 18px;
+  background: var(--kind-icon) center / contain no-repeat; pointer-events: none;
+}
+[data-group="怪兽种类"] [data-label="通常"] { --kind-icon: url('/assets/kind/monster.png'); }
+[data-group="怪兽种类"] [data-label="通常"]::before { filter: sepia(.65) saturate(1.4); }
+[data-group="怪兽种类"] [data-label="效果"] { --kind-icon: url('/assets/kind/monster.png'); }
+[data-group="怪兽种类"] [data-label="仪式"] { --kind-icon: url('/assets/kind/monster.png'); }
+[data-group="怪兽种类"] [data-label="仪式"]::before { filter: hue-rotate(170deg) saturate(.8); }
+[data-group="怪兽种类"] [data-label="融合"] { --kind-icon: url('/assets/kind/fusion.png'); }
+[data-group="怪兽种类"] [data-label="同调"] { --kind-icon: url('/assets/kind/synchro.png'); }
+[data-group="怪兽种类"] [data-label="超量"] { --kind-icon: url('/assets/kind/xyz.png'); }
+[data-group="怪兽种类"] [data-label="灵摆"] { --kind-icon: url('/assets/kind/pendulum.png'); }
+[data-group="怪兽种类"] [data-label="连接"] { --kind-icon: url('/assets/kind/link.png'); }
+[data-group="魔法种类"] [data-label="通常"] { --kind-icon: url('/assets/kind/spell.png'); }
+[data-group="魔法种类"] [data-label="仪式"] { --kind-icon: url('/assets/kind/ritual.png'); }
+[data-group="魔法种类"] [data-label="速攻"] { --kind-icon: url('/assets/kind/quickplay.png'); }
+[data-group="魔法种类"] [data-label="永续"],
+[data-group="陷阱种类"] [data-label="永续"] { --kind-icon: url('/assets/kind/continuous.png'); }
+[data-group="魔法种类"] [data-label="装备"] { --kind-icon: url('/assets/kind/equip.png'); }
+[data-group="魔法种类"] [data-label="场地"] { --kind-icon: url('/assets/kind/field.png'); }
+[data-group="陷阱种类"] [data-label="通常"] { --kind-icon: url('/assets/kind/trap.png'); }
+[data-group="陷阱种类"] [data-label="反击"] { --kind-icon: url('/assets/kind/counter.png'); }
+
+/* Uniform filter tiles in Search and Card panels. */
+#pane-manual .panel:is([data-title="搜索"], [data-title="卡面"]) .chip {
+  width: 88px !important; height: 32px; flex: 0 0 88px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 3px 8px; white-space: nowrap; line-height: 1.2;
+}
+#pane-manual .panel[data-title="卡面"] :is(#g-attr, #g-race) .chip,
+#pane-manual .panel[data-title="卡面"] .kind-row:not([data-group="怪兽能力"]) .chip,
+#pane-manual #g-ban .chip {
+  position: relative; padding-left: 30px; padding-right: 10px;
+}
+#g-attr .chip::before, #g-race .chip::before,
+.kind-row:not([data-group="怪兽能力"]) .chip::before, #g-ban .chip::before {
+  left: 9px; width: 18px; height: 20px;
+}
+#g-ban .chip::before {
+  content: ""; position: absolute; top: 50%; transform: translateY(-50%);
+  background: var(--ban-icon) center / contain no-repeat; pointer-events: none;
+}
+#g-ban [data-label="禁止"] { --ban-icon: url('/assets/ban/forbidden.png'); }
+#g-ban [data-label="限制"] { --ban-icon: url('/assets/ban/limited.png'); }
+#g-ban [data-label="准限制"] { --ban-icon: url('/assets/ban/semi-limited.png'); }
+#g-ban [data-label="无限制"] { --ban-icon: url('/assets/ban/unlimited.svg'); }
+[data-group="怪兽种类"] [data-label="灵摆"] { --kind-icon: url('/assets/kind/pendulum-card.svg'); }
+/* The same gold and embossed surface as the navigation thumb. */
+:root {
+  --gold-control: linear-gradient(135deg, #d0b579, #94703b);
+  --gold-relief: inset 1px 1px 0 #f8e7b6, inset -1px -1px 0 #6f522c, inset 0 0 0 1px #eddaa7;
+}
+.mode-switch .mode-thumb, .action-bar .btn:not(.ghost), #nl-btn {
+  background: var(--gold-control); color: #211d15;
+  box-shadow: var(--gold-relief), 0 1px 3px #24190f30;
+  text-shadow: 0 1px #f4dfb177;
+}
+.action-bar .btn:not(.ghost):not(:disabled):hover, #nl-btn:not(:disabled):hover {
+  box-shadow: var(--gold-relief), 0 0 0 1px #b09255, 0 2px 4px #24190f33;
+}
+.card .line1 { align-items: center; }
+.card .name, .card .line1 .badge { line-height: 1.4; }
+.card .line1 .badge { display: inline-flex; align-items: center; white-space: nowrap; }
+.card .copy-btn { align-self: center; }
+
+/* Compact, equally sized filters, with room for the icon and longest label. */
+#pane-manual #g-category .chip { width: 88px !important; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 3px 6px; white-space: nowrap; }
+#pane-manual .panel[data-title="卡面"] :is(#g-attr, #g-race) .chip,
+#pane-manual .panel[data-title="卡面"] .kind-row:not([data-group="怪兽能力"]) .chip,
+#pane-manual #g-ban .chip { padding-left: 26px; padding-right: 6px; }
+#g-attr .chip::before, #g-race .chip::before,
+.kind-row:not([data-group="怪兽能力"]) .chip::before, #g-ban .chip::before { left: 5px; }
+/* Match the gold relief on controls; native scrolling/keyboard behavior stays intact. */
+* { scrollbar-width: thin; scrollbar-color: #a68a53 #e8dec8; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #e8dec8; border: 1px solid #cabb9b; }
+::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #ceb77d, #9b7e48); border: 2px solid #e8dec8; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #94703b; }
+::-webkit-scrollbar-corner { background: #e8dec8; }
+@media (forced-colors: active) { * { scrollbar-color: auto; } }
+
+/* Card-frame selects: keep the native menu and keyboard navigation. */
+select, .sort-bar select {
+  appearance: none;
+  padding: 7px 38px 7px 10px;
+  min-height: 34px;
+  color: #49371e;
+  border: 1px solid #a88a54;
+  border-radius: var(--radius);
+  background-color: #fbf4e3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2365471e' stroke-width='1.7'/%3E%3C/svg%3E"), linear-gradient(#c9ad72, #c9ad72), linear-gradient(110deg, #fff9eb, #eee0bc);
+  background-position: right 10px center, right 31px center, center;
+  background-size: 12px 8px, 1px 60%, 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: var(--bevel), 0 1px 2px #49351a18;
+  cursor: pointer;
+}
+select:hover:not(:disabled) { border-color: #795624; }
+select:focus-visible { outline: 2px solid #96713a; outline-offset: 2px; }
+select:disabled { opacity: .55; cursor: not-allowed; }
+select option { background: #fff9eb; color: #49371e; }
+/* Theme the opened picker as well as its closed control. */
+@supports (appearance: base-select) {
+  select, .sort-bar select, select::picker(select) { appearance: base-select; }
+  select::picker-icon { display: none; }
+  select::picker(select) {
+    top: anchor(bottom);
+    bottom: auto;
+    margin-top: 4px;
+    position-try-fallbacks: none;
+    background: #fff9eb;
+    border: 1px solid #a88a54;
+    border-radius: var(--radius);
+    padding: 4px;
+    box-shadow: inset 0 0 0 1px #f8e7b6, 0 6px 18px #49351a30;
+    max-height: min(360px, var(--picker-room, 60vh));
+    overflow-y: auto;
+  }
+  select option { padding: 8px 10px; gap: 8px; border-radius: var(--radius); }
+  select option:is(:hover, :focus-visible) { background: #ead8ae; color: #49371e; outline: none; }
+  select option:checked {
+    background: linear-gradient(#896534, #69451d);
+    color: #fff9eb;
+    box-shadow: inset 0 1px #b99b66;
+  }
+  select option::checkmark { color: #f8e7b6; }
+}
+.field-options {
+  position: fixed; inset: auto; margin: 0; box-sizing: border-box;
+  padding: 4px; overflow-y: auto; border: 1px solid #a88a54;
+  border-radius: var(--radius); background: #fff9eb; color: #49371e;
+  box-shadow: inset 0 0 0 1px #f8e7b6, 0 6px 18px #49351a30;
+  font-size: 13px;
+}
+.field-options [role="option"] { padding: 8px 10px; cursor: pointer; }
+.field-options [role="option"]:hover { background: #ead8ae; }
+.field-options [aria-selected="true"] { background: linear-gradient(#896534, #69451d); color: #fff9eb; box-shadow: inset 0 1px #b99b66; }
+@media (forced-colors: active) {
+  select, .sort-bar select, select::picker(select) { appearance: auto; background-image: none; padding-right: 10px; }
+}

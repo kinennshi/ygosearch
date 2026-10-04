@@ -306,6 +306,8 @@ class LLMClient:
             except json.JSONDecodeError as e:
                 return None, f"输出不是合法 JSON：{e}（原始输出前 200 字：{text[:200]}）"
         try:
+            if isinstance(obj, dict) and obj.get("error"):
+                return None, "无法完整表达查询：" + str(obj["error"])[:300]
             D.normalize(obj, setnames)
         except D.DSLError as e:
             return None, str(e)

@@ -113,8 +113,9 @@ class Engine:
             d = dict(r)
             d["seg_category_names"] = [
                 name for bit, name in C.CATEGORY_BITS if d["seg_category"] & bit]
-            if D.is_ritual_effect(d["seg_type"], d["text"]):
-                d["seg_category_names"].append("仪式相关")
+            for category, (name, _terms) in D.TEXT_EFFECT_CATEGORIES.items():
+                if D.is_text_effect(category, d["seg_type"], d["text"]):
+                    d["seg_category_names"].append(name)
             out.append(d)
         return out
 
@@ -254,7 +255,7 @@ class Engine:
             elif f == "name":
                 reasons.append(f"卡名含「{cond['keyword']}」")
             elif f == "desc":
-                reasons.append(f"描述含「{cond['keyword']}」")
+                reasons.append(D.desc_condition_label(cond))
             elif f == "category":
                 names = [name for bit, name in C.CATEGORY_BITS
                          if bit in cond["bits"]]

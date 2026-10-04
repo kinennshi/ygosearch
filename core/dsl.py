@@ -25,9 +25,21 @@ RITUAL_CATEGORY = "ritual"
 RITUAL_TERMS = ("仪式召唤", "仪式魔法", "仪式怪兽", "仪式卡")
 
 
-def is_ritual_effect(seg_type: str, text: str) -> bool:
+TEXT_EFFECT_CATEGORIES = {
+    RITUAL_CATEGORY: ("仪式相关", RITUAL_TERMS),
+    "face_down": ("里侧相关", ("里侧表示除外", "里侧守备表示特殊召唤")),
+    "damage_immunity": ("伤害免疫", ("伤害变成0", "伤害变成０")),
+}
+
+
+def is_text_effect(category: str, seg_type: str, text: str) -> bool:
     return (seg_type in ("monster", "pendulum", "spell_trap")
-            and any(term in (text or "") for term in RITUAL_TERMS))
+            and any(term in (text or "") for term in TEXT_EFFECT_CATEGORIES[category][1]))
+
+
+def is_ritual_effect(seg_type: str, text: str) -> bool:
+    return is_text_effect(RITUAL_CATEGORY, seg_type, text)
+
 
 ACTIVATION_ENUMS = set(C.ACTIVATION_VALUES)
 LOCATION_ENUMS = set(C.LOCATION_VALUES)
@@ -49,9 +61,9 @@ FIELD_OPS = {
     "atk": {"between", "eq"},
     "def": {"between", "eq"},
     "setname": {"eq"},
-    "ot": {"in"},
+    "ot": {"in", "includes"},
     "name": {"contains"},
-    "desc": {"contains"},
+    "desc": {"contains", "contains_any"},
     "category": {"bit_has_any", "bit_has_all", "bit_has_none"},
     "effects": {"exists"},
     "forbidden": {"in"},
@@ -149,14 +161,32 @@ def _norm_bit_list(value: Any, what: str) -> List[int]:
     return out
 
 
+def _norm_text_list(value: Any, what: str) -> List[str]:
+    if (not isinstance(value, list) or not 1 <= len(value) <= 16
+            or any(not isinstance(v, str) or not v.strip() or len(v) > 160 for v in value)):
+        raise DSLError(f"{what} 应为 1~16 个非空文本片段，每项最多 160 字")
+    return list(dict.fromkeys(v.strip() for v in value))
+
+
+def _text_sql(col: str, words: List[str], join: str, params: List[Any]) -> str:
+    params.extend("%" + _escape_like(word) + "%" for word in words)
+    return "(" + join.join(f"{col} LIKE ? ESCAPE '\\'" for _ in words) + ")"
+
+
+def desc_condition_label(cond: Dict) -> str:
+    if cond["op"] == "contains_any":
+        return "文本含任一：" + "、".join(f"「{word}」" for word in cond["keywords"])
+    return f"文本含「{cond['keyword']}」"
+
+
 def _norm_effect_category_list(value: Any) -> List[Any]:
-    """效果段类型允许官方 category 位，以及派生的仪式相关标签。"""
+    """效果段类型允许官方 category 位，以及派生的文本标签。"""
     if isinstance(value, (int, str)) and not isinstance(value, bool):
         value = [value]
     if not isinstance(value, list) or not value:
         raise DSLError("seg_category_any 应为效果类型列表")
     for item in value:
-        if item != RITUAL_CATEGORY and (not isinstance(item, int)
+        if not (isinstance(item, str) and item in TEXT_EFFECT_CATEGORIES) and (not isinstance(item, int)
                                         or isinstance(item, bool)
                                         or item not in CATEGORY_BIT_VALUES):
             raise DSLError(f"seg_category_any 含非法效果类型 {item!r}")
@@ -241,10 +271,15 @@ def _norm_cond(i: int, cond: Any, setnames: Dict[int, str]) -> Dict:
             if not isinstance(x, int) or isinstance(x, bool) or x not in OT_VALUES:
                 raise DSLError(f"ot 含非法卡池值 {x!r}。可用：{sorted(OT_VALUES)}")
         out["values"] = [int(x) for x in v]
+        if op == "includes" and any(x not in (1, 2, 3, 8, 9, 10, 11) for x in v):
+            raise DSLError("卡池归属仅接受 OCG=1、TCG=2、简中=8 及其组合")
     elif field in ("name", "desc"):
-        if not isinstance(v, str) or not v.strip():
-            raise DSLError(f"{field} 关键词应为非空字符串")
-        out["keyword"] = v.strip()
+        if field == "desc" and op == "contains_any":
+            out["keywords"] = _norm_text_list(v, "desc.contains_any")
+        else:
+            if not isinstance(v, str) or not v.strip():
+                raise DSLError(f"{field} 关键词应为非空字符串")
+            out["keyword"] = v.strip()
     elif field == "category":
         out["bits"] = _norm_bit_list(v, "category")
     elif field == "effects":
@@ -270,11 +305,15 @@ def _norm_effects_where(where: Any) -> Dict:
         raise DSLError("effects.exists 的 where 应为非空对象")
     ALLOWED = {"targets", "activation", "location", "timing", "negate_type",
                "seg_category_any", "exclude_negate"}
+    ALLOWED |= {"text_any", "text_all"}
     unknown = set(where) - ALLOWED
     if unknown:
         raise DSLError(f"effects.where 含未知键：{sorted(unknown)}。"
                        f"可用键：{sorted(ALLOWED)}")
     out = {}
+    for key in ("text_any", "text_all"):
+        if key in where:
+            out[key] = _norm_text_list(where[key], key)
     if "targets" in where:
         if (not isinstance(where["targets"], int)
                 or isinstance(where["targets"], bool)
@@ -333,6 +372,9 @@ def _num_cond(col: str, cond: Dict, sql: List[str], params: List[Any]):
 
 def _effects_subsql(where: Dict, params: List[Any]) -> str:
     subs = []
+    for key, join in (("text_any", " OR "), ("text_all", " AND ")):
+        if key in where:
+            subs.append(_text_sql("e.text", where[key], join, params))
     if "targets" in where:
         subs.append("e.targets = ?")
         params.append(where["targets"])
@@ -349,16 +391,17 @@ def _effects_subsql(where: Dict, params: List[Any]) -> str:
     if "seg_category_any" in where:
         mask = 0
         for b in where["seg_category_any"]:
-            if b != RITUAL_CATEGORY:
+            if isinstance(b, int):
                 mask |= b
         category_clauses = []
         if mask:
             category_clauses.append("(e.seg_category & ?) != 0")
             params.append(mask)
-        if RITUAL_CATEGORY in where["seg_category_any"]:
-            category_clauses.append("(" + " OR ".join(
-                "e.text LIKE ?" for _ in RITUAL_TERMS) + ")")
-            params.extend("%" + term + "%" for term in RITUAL_TERMS)
+        for category, (_name, terms) in TEXT_EFFECT_CATEGORIES.items():
+            if category in where["seg_category_any"]:
+                category_clauses.append("(" + " OR ".join(
+                    "e.text LIKE ?" for _ in terms) + ")")
+                params.extend("%" + term + "%" for term in terms)
         subs.append("(" + " OR ".join(category_clauses) + ")")
     # Rule and flavor rows are stored for display, but are not card effects.
     subs.insert(0, "e.seg_type IN ('monster','pendulum','spell_trap')")
@@ -414,12 +457,18 @@ def compile(dsl: Dict, setnames: Dict[int, str]) -> CompiledQuery:
                 params.append(code)
             sql.append("(" + " OR ".join(parts) + ")")
         elif f == "ot":
-            sql.append(f"d.ot IN ({','.join('?' * len(cond['values']))})")
-            params.extend(cond["values"])
+            if op == "in":
+                sql.append(f"d.ot IN ({','.join('?' * len(cond['values']))})")
+                params.extend(cond["values"])
+            else:
+                # Each mask requires all its regions; multiple selections are ORed.
+                sql.append("(" + " OR ".join("(d.ot & ?) = ?" for _ in cond["values"]) + ")")
+                for value in cond["values"]:
+                    params.extend((value, value))
         elif f in ("name", "desc"):
             col = "t.name" if f == "name" else "t.desc"
-            sql.append(f"{col} LIKE ? ESCAPE '\\'")
-            params.append(f"%{_escape_like(cond['keyword'])}%")
+            words = cond["keywords"] if op == "contains_any" else [cond["keyword"]]
+            sql.append(_text_sql(col, words, " OR ", params))
         elif f == "category":
             bits = cond["bits"]
             if op == "bit_has_any":
@@ -457,6 +506,9 @@ def compile(dsl: Dict, setnames: Dict[int, str]) -> CompiledQuery:
 # ---------------- 人类可读描述 ----------------
 def _dims_zh(where: Dict) -> List[str]:
     parts = []
+    for key, label in (("text_any", "效果文本含任一"), ("text_all", "效果文本同时含")):
+        if key in where:
+            parts.append(label + "：" + "、".join(f"「{word}」" for word in where[key]))
     if "targets" in where:
         parts.append("取对象" if where["targets"] == 1 else "不取对象")
     if "activation" in where:
@@ -472,8 +524,8 @@ def _dims_zh(where: Dict) -> List[str]:
     if "seg_category_any" in where:
         names = []
         for b in where["seg_category_any"]:
-            if b == RITUAL_CATEGORY:
-                names.append("仪式相关")
+            if isinstance(b, str) and b in TEXT_EFFECT_CATEGORIES:
+                names.append(TEXT_EFFECT_CATEGORIES[b][0])
                 continue
             for bit, name in C.CATEGORY_BITS:
                 if bit == b:
@@ -526,10 +578,12 @@ def describe(dsl: Dict, setnames: Dict[int, str]) -> str:
         elif f == "ot":
             names = [C.OT_LABELS.get(v, str(v)) for v in cond["values"]]
             parts.append("卡池 " + "、".join(names))
+            if op != "in":
+                parts[-1] += "（组合卡池取交集，多选取并集）"
         elif f == "name":
             parts.append(f"卡名含「{cond['keyword']}」")
         elif f == "desc":
-            parts.append(f"描述含「{cond['keyword']}」")
+            parts.append(desc_condition_label(cond))
         elif f == "category":
             names = []
             for b in cond["bits"]:

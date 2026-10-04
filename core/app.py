@@ -56,6 +56,11 @@ def index():
     return send_from_directory(WEB_DIR, "index.html")
 
 
+@app.get("/assets/<path:filename>")
+def web_asset(filename):
+    return send_from_directory(WEB_DIR / "assets", filename)
+
+
 @app.get("/api/vocab")
 def api_vocab():
     return ok({"vocab": VOCAB, "card_count": CARD_COUNT,

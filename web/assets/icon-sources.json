@@ -1,0 +1,288 @@
+{
+  "repository": "https://github.com/SethPDA/MDPro3",
+  "commit": "1d106cc4919f6996209215441035781f6f85203b",
+  "mapping": "Assets/ScriptableObjects/TextureContainer.asset",
+  "icons": [
+    {
+      "label": "光",
+      "file": "attribute/light.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr01.png",
+      "guid": "157f899e40b269e4bb70d867aa084278"
+    },
+    {
+      "label": "暗",
+      "file": "attribute/dark.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr02.png",
+      "guid": "7976b559931f6e840863f07ea92c278a"
+    },
+    {
+      "label": "水",
+      "file": "attribute/water.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr03.png",
+      "guid": "e639e2cab68115f499825b099bd456d5"
+    },
+    {
+      "label": "炎",
+      "file": "attribute/fire.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr04.png",
+      "guid": "2119e6711b1bb6e4980a96d917f9698b"
+    },
+    {
+      "label": "地",
+      "file": "attribute/earth.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr05.png",
+      "guid": "d2b5a41acfff1de4a99e6e62b6457c51"
+    },
+    {
+      "label": "风",
+      "file": "attribute/wind.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr06.png",
+      "guid": "99c98136e82666b45b36c8cf37ae3e75"
+    },
+    {
+      "label": "神",
+      "file": "attribute/divine.png",
+      "source": "Assets/Texture/Icons_Attribute/GUI_T_Icon1_Attr07.png",
+      "guid": "435cb54b358980b42b0fabd5dbbce75a"
+    },
+    {
+      "label": "战士",
+      "file": "race/warrior.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type15.png",
+      "guid": "27976d9d50670de4fbe0c620b47f5555"
+    },
+    {
+      "label": "魔法师",
+      "file": "race/spellcaster.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type18.png",
+      "guid": "a0b74f70022f2fc4c801612555ed5cb8"
+    },
+    {
+      "label": "天使",
+      "file": "race/fairy.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type17.png",
+      "guid": "e2c9521823ee7f84ba8ed2ae461024fa"
+    },
+    {
+      "label": "恶魔",
+      "file": "race/fiend.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type03.png",
+      "guid": "aa9561f431606db48932bd79ab11649a"
+    },
+    {
+      "label": "不死",
+      "file": "race/zombie.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type02.png",
+      "guid": "750d019853f5dc74f9cf9d2b29990aed"
+    },
+    {
+      "label": "机械",
+      "file": "race/machine.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type07.png",
+      "guid": "9790b14efa659ae47b20c6475fa63be3"
+    },
+    {
+      "label": "水族",
+      "file": "race/aqua.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type14.png",
+      "guid": "b8ce2793cded8254197e7fd219d3aafb"
+    },
+    {
+      "label": "炎",
+      "file": "race/pyro.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type04.png",
+      "guid": "e466974582869b545afa5ad4f03b5d17"
+    },
+    {
+      "label": "岩石",
+      "file": "race/rock.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type06.png",
+      "guid": "a263cf8bdfa0a7749a156c7b7bebc559"
+    },
+    {
+      "label": "鸟兽",
+      "file": "race/windbeast.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type16.png",
+      "guid": "a8c32dcd6de8bcc42bfe2257f3fdb299"
+    },
+    {
+      "label": "植物",
+      "file": "race/plant.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type13.png",
+      "guid": "c4dc57352ad56b34dbec17a57ccbadd2"
+    },
+    {
+      "label": "昆虫",
+      "file": "race/insect.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type10.png",
+      "guid": "9a609772032e83e4ba6b7043e649e536"
+    },
+    {
+      "label": "雷",
+      "file": "race/thunder.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type19.png",
+      "guid": "5c2e30db054f6e9418d114f51c901dee"
+    },
+    {
+      "label": "龙",
+      "file": "race/dragon.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type01.png",
+      "guid": "1242242e6c3fe9a43bd4aee811d6f6f9"
+    },
+    {
+      "label": "兽",
+      "file": "race/beast.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type11.png",
+      "guid": "b1ad9a48d50cb2040b90f94621425252"
+    },
+    {
+      "label": "兽战士",
+      "file": "race/beastwarrior.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type12.png",
+      "guid": "cede04387f8d7d94dac7ccb3b699dcf1"
+    },
+    {
+      "label": "恐龙",
+      "file": "race/dinosaur.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type09.png",
+      "guid": "4edb545bb5fb1d548810b2660df40fc7"
+    },
+    {
+      "label": "鱼",
+      "file": "race/fish.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type08.png",
+      "guid": "b80de005ec7e4be4386bd65f872f6499"
+    },
+    {
+      "label": "海龙",
+      "file": "race/seaserpent.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type05.png",
+      "guid": "f3e046ef65d707941a62647abed0820e"
+    },
+    {
+      "label": "爬虫类",
+      "file": "race/reptile.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type20.png",
+      "guid": "f711a69fc93ae574fafb6082aa3a4e60"
+    },
+    {
+      "label": "念动力",
+      "file": "race/psycho.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type21.png",
+      "guid": "19990e94628278a47ba3799778580d98"
+    },
+    {
+      "label": "幻神兽",
+      "file": "race/divinebeast.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type24.png",
+      "guid": "a6cf89a4fe08a0b4d8959178847bbaa8"
+    },
+    {
+      "label": "创造神",
+      "file": "race/creatorgod.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type26.png",
+      "guid": "180d25d5d5863ef49bcc87eb2ee16f54"
+    },
+    {
+      "label": "幻龙",
+      "file": "race/wyrm.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type22.png",
+      "guid": "77ae231532271c1489da445d25e54710"
+    },
+    {
+      "label": "电子界",
+      "file": "race/cyberse.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type23.png",
+      "guid": "860c999589bd944468a5e951990cbd53"
+    },
+    {
+      "label": "幻想魔",
+      "file": "race/illustion.png",
+      "source": "Assets/Texture/Icons_Race/GUI_T_Icon1_Type25.png",
+      "guid": "704a16de18280f04bb6f01af43b8b281"
+    },
+    {
+      "label": "typeNone",
+      "file": "kind/none.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon00.png",
+      "guid": "cfdad45f88fa7a14eb79e8bbc3307670"
+    },
+    {
+      "label": "typeCounter",
+      "file": "kind/counter.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon01.png",
+      "guid": "e8877c146699bad498e5c7c3e7d5c22f"
+    },
+    {
+      "label": "typeField",
+      "file": "kind/field.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon02.png",
+      "guid": "29814486051bdaa4ebf24d6c941f462c"
+    },
+    {
+      "label": "typeEquip",
+      "file": "kind/equip.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon03.png",
+      "guid": "56685cddec6cef543a5bb93de07310cd"
+    },
+    {
+      "label": "typeContinuous",
+      "file": "kind/continuous.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon04.png",
+      "guid": "6de5a7a894537074db040e0efaa86f6d"
+    },
+    {
+      "label": "typeQuickPlay",
+      "file": "kind/quickplay.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon05.png",
+      "guid": "8731d44acc260e945bf8376b6b431c97"
+    },
+    {
+      "label": "typeRitual",
+      "file": "kind/ritual.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Icon06.png",
+      "guid": "828c1fc084eba3149a264e11c77ecea6"
+    },
+    {
+      "label": "typePendulum",
+      "file": "kind/pendulum.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon1_Other_Pendulum.png",
+      "guid": "7a8c20edf61a2e242aa8f436dd4f7300"
+    },
+    {
+      "label": "monster",
+      "file": "kind/monster.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_1.png"
+    },
+    {
+      "label": "spell",
+      "file": "kind/spell.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_2.png"
+    },
+    {
+      "label": "trap",
+      "file": "kind/trap.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_3.png"
+    },
+    {
+      "label": "fusion",
+      "file": "kind/fusion.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_4.png"
+    },
+    {
+      "label": "synchro",
+      "file": "kind/synchro.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_5.png"
+    },
+    {
+      "label": "xyz",
+      "file": "kind/xyz.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_6.png"
+    },
+    {
+      "label": "link",
+      "file": "kind/link.png",
+      "source": "Assets/Texture/Icons_Types/GUI_T_Icon_CardType_7.png"
+    }
+  ]
+}

@@ -17,6 +17,77 @@ import llm_system_prompt as P
 
 
 class SearchUpdates(unittest.TestCase):
+    def test_text_effect_categories_examples_and_labels(self):
+        cases = [('face_down', '里侧相关', [48626373]),
+                 ('damage_immunity', '伤害免疫', [2220237, 26631975])]
+        for key, label, ids in cases:
+            self.assertIn({'bit': key, 'name': label}, A.VOCAB['categories'])
+            self.assertIn(key, P.DSL_SCHEMA)
+            for card_id in ids:
+                card = A.engine.card(card_id)
+                result = self.client.post('/api/search', json={'dsl': {'must': [
+                    {'field': 'name', 'op': 'contains', 'value': card['name']},
+                    {'field': 'effects', 'op': 'exists', 'where': {'seg_category_any': [key]}}
+                ]}}).get_json()
+                self.assertIn(card_id, [c['id'] for c in result['cards']])
+                self.assertIn(label, result['described'])
+                self.assertTrue(any(label in e['seg_category_names']
+                                    for e in A.engine.effects_of(card_id)))
+
+    def test_text_effect_category_boundaries_and_sql(self):
+        import sqlite3
+        samples = [
+            ('monster', '那张卡里侧表示除外。', 'face_down'),
+            ('spell_trap', '那只怪兽里侧守备表示特殊召唤。', 'face_down'),
+            ('monster', '自己受到的战斗伤害变成0。', 'damage_immunity'),
+            ('pendulum', '让那次伤害变成0。', 'damage_immunity'),
+            ('monster', '自己受到的效果伤害变成０。', 'damage_immunity'),
+            ('monster', '那只怪兽变成里侧守备表示。', None),
+            ('monster', '受到的伤害变成一半。', None),
+            ('rule', '伤害变成0，里侧表示除外。', None),
+        ]
+        db = sqlite3.connect(':memory:')
+        db.execute('CREATE TABLE card_effects (seg_type TEXT, text TEXT, seg_category INTEGER)')
+        db.executemany('INSERT INTO card_effects VALUES (?, ?, 0)',
+                       [(kind, text) for kind, text, _ in samples])
+        try:
+            for key in ('face_down', 'damage_immunity'):
+                params = []
+                sql = D._effects_subsql({'seg_category_any': [key]}, params)
+                actual = {r[0] for r in db.execute('SELECT e.text FROM card_effects e WHERE ' + sql, params)}
+                expected = {text for _, text, category in samples if category == key}
+                self.assertEqual(actual, expected)
+                for kind, text, category in samples:
+                    self.assertEqual(D.is_text_effect(key, kind, text), category == key)
+            # Mixed official and derived categories remain an OR within one effect segment.
+            response = self.client.post('/api/search', json={'dsl': {'must': [
+                {'field': 'effects', 'op': 'exists', 'where': {
+                    'seg_category_any': ['face_down', 'damage_immunity', 'ritual', 1]}}
+            ]}})
+            self.assertEqual(response.status_code, 200)
+        finally:
+            db.close()
+
+    def test_pool_membership_counts_and_paging(self):
+        # Independent exact-code oracle for this database's regional combinations.
+        for masks, codes in (([1], [1, 3, 9, 11]), ([2], [2, 3, 11]),
+                             ([3], [3, 11]), ([9], [9, 11]),
+                             ([1, 2], [1, 2, 3, 9, 11])):
+            expected = A.engine.db.execute(
+                "SELECT COUNT(DISTINCT t.name) FROM cards.datas d "
+                "JOIN cards.texts t ON t.id=d.id WHERE (d.type & ?) = 0 "
+                f"AND d.ot IN ({','.join('?' for _ in codes)})",
+                [C.TYPE_TOKEN | C.TYPE_TRAPMONSTER, *codes]).fetchone()[0]
+            for offset in (0, 100):
+                response = self.client.post('/api/search', json={
+                    'dsl': {'must': [{'field': 'ot', 'op': 'includes', 'value': masks}]},
+                    'limit': 100, 'offset': offset})
+                self.assertEqual(response.status_code, 200)
+                result = response.get_json()
+                self.assertEqual(result['total'], expected)
+                self.assertTrue(all(c['ot'] in codes for c in result['cards']))
+        self.assertIn('"op": "includes"', P.DSL_SCHEMA)
+
     def setUp(self):
         self.client = A.app.test_client()
 

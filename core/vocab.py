@@ -26,6 +26,9 @@ def build_vocab(setnames: Dict[int, str], available_ot=None) -> Dict:
                            if category["name"] == "超量相关") + 1
     categories.insert(ritual_position,
                       {"bit": D.RITUAL_CATEGORY, "name": "仪式相关"})
+    categories.extend({"bit": key, "name": name}
+                      for key, (name, _terms) in D.TEXT_EFFECT_CATEGORIES.items()
+                      if key != D.RITUAL_CATEGORY)
     return {
         "type_groups": type_groups,
         "types": types,

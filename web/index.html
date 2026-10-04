@@ -257,6 +257,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .summary { cursor: pointer; }
 
 </style>
+<link rel="stylesheet" href="/assets/card-theme.css">
 </head>
 <body>
 <header>
@@ -325,10 +326,11 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
       <div class="panel" data-title="搜索">
         <div class="group"><label>卡名含</label>
           <input type="text" id="name-kw"></div>
-        <div class="group"><label>系列</label>
-          <input type="text" id="setname" list="setname-list"
-                 placeholder="输入系列名，可自动补全">
-          <datalist id="setname-list"></datalist></div>
+        <div class="group"><label for="setname">字段</label>
+          <input type="text" id="setname" role="combobox" aria-autocomplete="list"
+                 aria-expanded="false" aria-controls="setname-list" autocomplete="off"
+                 placeholder="输入字段名，可自动补全">
+          <div id="setname-list" class="field-options" role="listbox" aria-label="字段" popover="manual"></div></div>
         <div class="group"><label>卡池</label>
           <div class="chips" id="g-ot"></div></div>
         <div class="group"><label>禁限情况</label>
@@ -495,6 +497,7 @@ function chip(label, on) {
   const s = document.createElement("span");
   s.className = "chip" + (on ? " on" : "");
   s.textContent = label;
+  s.dataset.label = label;
   return s;
 }
 function toggleChip(span) {
@@ -781,6 +784,7 @@ async function init() {
   for (const g of KIND_GROUPS) {
     const row = document.createElement("div");
     row.className = "kind-row"; row.dataset.scope = g.scope;
+    row.dataset.group = g.title;
     const lab = document.createElement("label");
     lab.textContent = g.title;
     row.appendChild(lab);
@@ -803,16 +807,23 @@ async function init() {
     toggleChip(s); document.getElementById("g-race").appendChild(s);
   }
   equalizeChips("g-race");
-  // 系列自动补全
-  const dl = document.getElementById("setname-list");
-  for (const n of VOCAB.setnames) {
-    const o = document.createElement("option"); o.value = n; dl.appendChild(o);
-  }
+  initFieldOptions();
   // 卡池
   const go = document.getElementById("g-ot");
   for (const o of VOCAB.ot) {
-    const s = chip(o.label, false);
-    s.dataset.val = o.value; toggleChip(s); go.appendChild(s);
+    const isAll = o.value === 11;
+    const s = chip(isAll ? "全部" : o.label, false);
+    s.dataset.val = isAll ? "all" : o.value;
+    s.addEventListener("click", () => {
+      if (isAll) {
+        go.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
+        s.classList.add("on");
+      } else {
+        go.querySelector('[data-val="all"]')?.classList.remove("on");
+        s.classList.toggle("on");
+      }
+    });
+    go.appendChild(s);
   }
   // 禁限情况
   const gb = document.getElementById("g-ban");
@@ -913,9 +924,10 @@ function buildDsl() {
   range("def-lo", "def-hi", "def");
   const sn = val("setname").trim();
   if (sn) must.push({field: "setname", op: "eq", value: sn});
-  const ots = [...document.querySelectorAll("#g-ot .chip.on")]
+  const allPools = document.querySelector('#g-ot [data-val="all"].on');
+  const ots = allPools ? [] : [...document.querySelectorAll('#g-ot .chip.on:not([data-val="all"])')]
     .map(s => +s.dataset.val);
-  if (ots.length) must.push({field: "ot", op: "in", value: ots});
+  if (ots.length) must.push({field: "ot", op: "includes", value: ots});
   const bans = [...document.querySelectorAll("#g-ban .chip.on")]
     .map(s => s.dataset.val === "none" ? "none" : +s.dataset.val);
   if (bans.length) must.push({field: "forbidden", op: "in", value: bans});
@@ -931,7 +943,7 @@ function buildDsl() {
   if (val("f-targets") !== "") where.targets = +val("f-targets");
   if (val("f-negate")) where.negate_type = [val("f-negate")];
   const catBits = [...document.querySelectorAll("#g-category .chip.on")]
-    .map(s => s.dataset.bit === "ritual" ? "ritual" : +s.dataset.bit);
+    .map(s => /^\d+$/.test(s.dataset.bit) ? +s.dataset.bit : s.dataset.bit);
   if (catBits.length) where.seg_category_any = catBits;
   if (document.getElementById("f-exclude-negate").checked)
     where.exclude_negate = true;
@@ -1099,6 +1111,7 @@ async function renderSearch(fetcher, page = 0) {
   for (const c of r.cards) {
     const el = document.createElement("div");
     el.className = "card";
+    el.dataset.frame = cardFrame(c);
     const isMonster = c.main_type === "怪兽";
     const kindText = c.main_type + "/" + (c.kinds.length ? c.kinds.join("/") : "通常");
     const badges = [
@@ -1124,7 +1137,7 @@ async function renderSearch(fetcher, page = 0) {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>${badges.join("")}</div>
        ${line2}
-       <div class="card-desc clamped">${descHtml}</div>`;
+       <div class="card-desc clamped"><div class="card-desc-text">${descHtml}</div></div>`;
     const copyBtn = el.querySelector(".copy-btn");
     copyBtn.addEventListener("click", ev => {
       ev.stopPropagation(); copyText(c.name);
@@ -1132,7 +1145,8 @@ async function renderSearch(fetcher, page = 0) {
     el.addEventListener("click", () => openCard(c.id));
     box.appendChild(el);
     const descEl = el.querySelector(".card-desc");
-    if (descEl && descEl.scrollHeight > descEl.clientHeight + 1) {
+    const descText = el.querySelector(".card-desc-text");
+    if (descText && descText.scrollHeight > descText.clientHeight + 1) {
       const btn = document.createElement("button");
       btn.className = "expand-btn";
       btn.textContent = "展开";
@@ -1175,6 +1189,19 @@ function moveCard(step) {
   const next = index + step;
   if (next >= 0 && next < RESULT_CARDS.length) openCard(RESULT_CARDS[next].id);
 }
+// Presentation only: use existing card metadata without changing search rules.
+function cardFrame(c) {
+  if (c.main_type === "魔法") return "spell";
+  if (c.main_type === "陷阱") return "trap";
+  const kinds = c.kinds || [];
+  for (const [kind, frame] of [["连接", "link"], ["超量", "xyz"],
+    ["同调", "synchro"], ["融合", "fusion"], ["仪式", "ritual"]]) {
+    if (kinds.includes(kind)) return frame;
+  }
+  if (c.is_pendulum) return "pendulum";
+  return kinds.includes("通常") ? "normal" : "effect";
+}
+
 async function openCard(id) {
   const serial = ++detailRequestSerial;
   const r = await api("/api/card/" + id);
@@ -1184,6 +1211,7 @@ async function openCard(id) {
   const index = RESULT_CARDS.findIndex(item => item.id === id);
   const dialog = document.getElementById("dlg");
   dialog.dataset.index = index;
+  dialog.dataset.frame = cardFrame(c);
   document.getElementById("dlg-prev").disabled = index <= 0;
   document.getElementById("dlg-next").disabled =
     index < 0 || index >= RESULT_CARDS.length - 1;
@@ -1214,10 +1242,10 @@ async function openCard(id) {
       <span class="k">卡池</span><span>${escapeHtml(c.ot_label)}</span>
       <span class="k">种族/属性</span><span>${escapeHtml(c.race)}／${escapeHtml(c.attribute)}</span>
       <span class="k">数值</span><span>${c.is_link ? "LINK " : "Lv"}${c.level}　攻 ${escapeHtml(c.atk_str)}　守 ${escapeHtml(c.def_str)}</span>
-      <span class="k">系列</span><span>${escapeHtml(c.setnames.join("、") || "—")}</span>
+      <span class="k">字段</span><span>${escapeHtml(c.setnames.join("、") || "—")}</span>
      </div>
      <div style="font-size:12px;color:var(--muted);margin:6px 0">
-       效果段与五维分类（自动标注，仅供参考）：</div>
+       效果：</div>
      ${segHtml || '<div class="hint">（无效果段）</div>'}`;
   document.getElementById("dlg-body").scrollTop = 0;
   if (!dialog.open) dialog.showModal();
@@ -1234,6 +1262,60 @@ document.getElementById("result-summary").addEventListener("click", () => {
   summaryExpanded = !summaryExpanded;
   updateSummary();
 });
+function initFieldOptions() {
+  const input = document.getElementById("setname");
+  const menu = document.getElementById("setname-list");
+  let matches = [], active = -1;
+  const close = () => {
+    menu.hidePopover(); input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  };
+  const position = () => {
+    const r = input.getBoundingClientRect();
+    menu.style.left = `${r.left}px`; menu.style.top = `${r.bottom + 4}px`;
+    menu.style.width = `${r.width}px`;
+    menu.style.maxHeight = `${Math.max(0, Math.min(280, innerHeight - r.bottom - 12))}px`;
+  };
+  const choose = i => { if (!matches[i]) return; input.value = matches[i]; close(); input.dispatchEvent(new Event("change", {bubbles:true})); };
+  const highlight = () => {
+    [...menu.children].forEach((el, i) => el.setAttribute("aria-selected", String(i === active)));
+    if (active >= 0) { input.setAttribute("aria-activedescendant", `field-option-${active}`); menu.children[active].scrollIntoView({block:"nearest"}); }
+    else input.removeAttribute("aria-activedescendant");
+  };
+  const open = () => {
+    const q = input.value.trim().toLocaleLowerCase();
+    matches = VOCAB.setnames.filter(n => n.toLocaleLowerCase().includes(q));
+    active = matches.indexOf(input.value); menu.replaceChildren();
+    matches.forEach((n, i) => {
+      const option = document.createElement("div");
+      option.id = `field-option-${i}`; option.setAttribute("role", "option"); option.textContent = n;
+      option.addEventListener("pointerdown", e => { e.preventDefault(); choose(i); });
+      menu.appendChild(option);
+    });
+    if (!matches.length) { close(); return; }
+    position(); menu.showPopover(); input.setAttribute("aria-expanded", "true"); highlight();
+  };
+  input.addEventListener("focus", open); input.addEventListener("click", open);
+  input.addEventListener("input", open); input.addEventListener("blur", close);
+  input.addEventListener("keydown", e => {
+    if (e.key === "Escape") { close(); e.preventDefault(); }
+    else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); if (!menu.matches(":popover-open")) open();
+      active = e.key === "ArrowDown" ? Math.min(active + 1, matches.length - 1) : Math.max(active - 1, 0); highlight();
+    } else if (e.key === "Enter" && menu.matches(":popover-open") && active >= 0) { e.preventDefault(); choose(active); }
+  });
+  window.addEventListener("resize", () => { if (menu.matches(":popover-open")) position(); });
+  document.addEventListener("scroll", e => { if (e.target !== menu && menu.matches(":popover-open")) position(); }, true);
+}
+function sizeSelectPicker(e) {
+  if (e.target instanceof HTMLSelectElement) {
+    const r = e.target.getBoundingClientRect();
+    e.target.style.setProperty("--picker-room", `${Math.max(0, innerHeight - r.bottom - 12)}px`);
+  }
+}
+document.addEventListener("focusin", sizeSelectPicker);
+document.addEventListener("pointerdown", sizeSelectPicker);
+document.addEventListener("keydown", sizeSelectPicker);
 init();
 </script>
 </body>
